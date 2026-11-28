@@ -1,6 +1,6 @@
 # Lastbook
 
-Lastbook is an offline survival library for Mac, Windows and Linux. It puts manuals, videos, encyclopedias, an offline map and
+Lastbook is a community built and maintained offline survival library for Mac, Windows and Linux. Point your AI to our repo and contribute to humanity's survival. It puts manuals, videos, encyclopedias, an offline map and
 short practical guides on one computer. After setup, it works offline. The desktop sidebar opens Videos, Map and Chat.
 Chat answers questions using the library, including the offline encyclopedias when they are present, and links to its sources.
 
@@ -13,9 +13,9 @@ Website: <https://lastbook.org>. Contact: hello@lastbook.org.
 
 | Platform | Version | Status |
 |---|---|---|
-| macOS (Apple Silicon, macOS 14 or later) | 1.1.14 | Live on lastbook.org, signed and notarized |
-| Windows (64-bit, Windows 10 or later) | 1.1.14 | Live on lastbook.org, Authenticode signed |
-| Linux (Ubuntu 24.04 or 26.04 LTS, x86_64) | 1.1.14 | Ubuntu packages; installation instructions below |
+| macOS (Apple Silicon, macOS 14 or later) | 1.1.19 | Live on lastbook.org, signed and notarized |
+| Windows (64-bit, Windows 10 or later) | 1.1.19 | Live on lastbook.org, Authenticode signed |
+| Linux (Ubuntu 24.04 or 26.04 LTS, x86_64) | 1.1.19 | Ubuntu packages; installation instructions below |
 
 ## iPad (development preview, source only)
 
@@ -27,11 +27,11 @@ A native iPad app (Videos, Map and Chat, offline, with optional on-device AI) is
 ## Install on Linux
 
 The Linux packages target **Ubuntu 24.04 LTS and Ubuntu 26.04 LTS on Intel/AMD x86_64 computers**, one package for each. Download
-[Lastbook for Ubuntu 24.04](https://downloads.lastbook.org/Lastbook_1.1.14_amd64.deb) (or [for Ubuntu 26.04](https://downloads.lastbook.org/Lastbook_1.1.14_ubuntu26.04_amd64.deb)), then install it with apt so Ubuntu resolves its dependencies.
+[Lastbook for Ubuntu 24.04](https://downloads.lastbook.org/Lastbook_1.1.19_amd64.deb) (or [for Ubuntu 26.04](https://downloads.lastbook.org/Lastbook_1.1.19_ubuntu26.04_amd64.deb)), then install it with apt so Ubuntu resolves its dependencies.
 
 ```bash
-sudo apt install ./Lastbook_1.1.14_amd64.deb                  # Ubuntu 24.04
-sudo apt install ./Lastbook_1.1.14_ubuntu26.04_amd64.deb      # Ubuntu 26.04
+sudo apt install ./Lastbook_1.1.19_amd64.deb                  # Ubuntu 24.04
+sudo apt install ./Lastbook_1.1.19_ubuntu26.04_amd64.deb      # Ubuntu 26.04
 ```
 
 Open Lastbook from the application menu. First-run setup downloads your chosen library, state map and optional local AI.
@@ -53,20 +53,25 @@ other Linux distributions have not been validated for this release.
   picks the state; Lastbook never detects location.
 - **Optional local AI.** Ask questions in plain words and get answers that cite library pages, from a model that runs on
   the computer itself (see "The local AI" below). Without it, Chat still finds the right pages.
+- **Saved video moments.** Keep several named positions in a video and open them from the player or Saved. Names and
+  positions stay on this device; the video and its captions are unchanged.
 - **One-download setup.** On first run, setup defaults to Small and selects local AI when the computer can run it.
   The person can choose Small, Medium or All, selects a state map, and starts the checked downloads. A library already on the
   computer (a folder or a pack zip) can be used instead of downloading.
-- **Check for updates, only when asked.** About has a Check for updates button (and the Mac menu has Lastbook > Check for
-  Updates…). It only says whether a newer version is on the website; nothing is downloaded or installed.
+- **App updates.** Choose **Notify me about app updates** in Settings or during first-time setup. Lastbook checks at most once
+  every 24 hours while it is open and online. If a compatible version is available, the sidebar shows **Update available**.
+  On a Mac build that can update itself, About's **Update now** asks you to confirm, installs the signed update and restarts
+  Lastbook. Elsewhere, **Open download page** opens the official download page: run the new installer. Either way your existing
+  library, settings and chats stay as they are. You can also check manually in About or the Mac menu under Lastbook > Check for Updates….
 
 ## Privacy and network use
 
 - **No listening port.** The desktop app opens no network port. The window and the engine talk through an in-memory bridge
   (`app/bridge.py`): WKURLSchemeHandler on macOS (`app/shell_macos.py`), WebView2 `WebResourceRequested` on Windows
   (`app/shell_windows.py`), and WebKitGTK `URISchemeRequest` on Linux (`app/shell_linux.py`). The local AI runner speaks JSON lines on standard input and output and opens no socket either.
-- **Two uses of the network, both started by the person.** (1) Setup's downloader (`engine/setup/`), when the person
-  starts or resumes a download. (2) The update check (`engine/update.py`, `web/update.js`), when the person presses
-  the button. Both go through `engine/setup/download.py`, the only module that opens a connection: HTTPS on port 443 only,
+- **Two uses of the network.** (1) Setup's downloader (`engine/setup/`), when the person starts or resumes a download.
+  (2) The app update check (`engine/update.py`, `web/update.js`), when the person checks manually or opts into daily checks.
+  Both go through `engine/setup/download.py`, the only module that opens a connection: HTTPS on port 443 only,
   to allow-listed hosts only (`downloads.lastbook.org` for packs, maps, the manifest and update information; Hugging Face's
   download hosts for the AI model; the update check accepts `downloads.lastbook.org` alone), no proxy from the system, and a
   redirect is followed only to another allowed host.
@@ -75,8 +80,8 @@ other Linux distributions have not been validated for this release.
   (`packaging/check_tls_roots.py`).
 - **Checked files.** Every download is checked against the SHA-256 in the manifest before it is used. Zips are checked
   for unsafe paths, links and sizes before anything is written.
-- **Nothing else.** The windows block all web loads, there is no telemetry, no account, and nothing runs on a timer or at
-  startup that reaches the network.
+- **Nothing else.** The windows block web loads, and there is no telemetry or account. App update notices are off by
+  default. With notices enabled, the app can check the release feed after launch or while the app is open.
 - **A working library is never broken.** New data is unpacked beside the old one, checked, and then switched in with a
   single rename. A failure at any step leaves the old library as it was.
 
@@ -185,7 +190,8 @@ so some of its paths and ports describe that setup. The desktop app does not use
 
 The builds write into `derived/app-build/` and refuse to finish if the package scan finds something that must not ship:
 test code, a network call outside setup's downloader, a web address in our own pages, or a word from the private list
-(see below). The builds also run the TLS roots gate.
+(see below). The builds also run the TLS roots gate and check that the packaged
+localization assets are present and up to date. [Localization guide](docs/i18n.md)
 
 **macOS (Apple Silicon, needs [uv](https://github.com/astral-sh/uv)):**
 
@@ -235,9 +241,9 @@ bash packaging/linux/build_app_linux.sh
 
 The package uses the system Python and pinned wheels from `packaging/linux/requirements_linux.txt`, built for that Python
 only, so each release gets its own package. On 24.04 (Python 3.12) the app build creates
-`derived/app-build/linux/<timestamp>/Lastbook_1.1.14_amd64.deb`; on 26.04 (Python 3.14) it creates
-`Lastbook_1.1.14_ubuntu26.04_amd64.deb`, with the version `1.1.14+ubuntu26.04`, which apt takes as newer than the 24.04 package; on Debian 13 (Python 3.13) it creates
-`Lastbook_1.1.14_debian13_amd64.deb`, with the version `1.1.14+debian13`.
+`derived/app-build/linux/<timestamp>/Lastbook_1.1.19_amd64.deb`; on 26.04 (Python 3.14) it creates
+`Lastbook_1.1.19_ubuntu26.04_amd64.deb`, with the version `1.1.19+ubuntu26.04`, which apt takes as newer than the 24.04 package; on Debian 13 (Python 3.13) it creates
+`Lastbook_1.1.19_debian13_amd64.deb`, with the version `1.1.19+debian13`.
 It bundles the local AI runner when `derived/llm/bin-linux/lastbook-llm` exists. `packaging/linux/smoke_deb.sh` checks
 the package in a fresh container of the same release.
 Linux integration-test helpers live under `app/tests/linux_*`; set `LASTBOOK_TEST_HOST` to a Windows SSH host with WSL2
@@ -252,7 +258,12 @@ before running them. Their disposable test distro is named `LastbookTest`, with 
   (a newer copy is fetched from `downloads.lastbook.org` when setup opens and used only if it validates).
 - **State maps** are one US state's detailed map set, built by `packaging/build_packs.py map <ST>` and published by
   `packaging/state_maps.py`, with per-state address indexes from `packaging/address_indexes.py`. A state map replaces the
-  library's map set; it never merges with it. Medium already holds California and All the whole US.
+  library's map set; it never merges with it. Medium already holds California and All the whole US. A European
+  country's map set is built the same way (`map eu-<iso>`, entry kind `country`; the country's box is its Geofabrik
+  extract's bounding box, from `packaging/europe-countries.json`), but publishing is opt-in:
+  `packaging/country-publication.json` is empty because the detail layers are still US-only, and
+  `packaging/state_maps.py` refuses a country whose built set has no detailed roads, help and water points, terrain,
+  buildings, crops or OpenStreetMap place names inside its box. Address indexes stay US-only.
 - **The local AI** is optional: Gemma 4 26B A4B (Unsloth's `gemma-4-26B-A4B-it-UD-Q4_K_M.gguf`, about 17 GB). The file
   name, size, SHA-256 and Hugging Face revision are pinned in `llm_local.py`. Setup offers it only where the measured fit
   says it fits (about 18 GB of memory for model and context, plus a reserve) and says why in plain words when it does not.
@@ -281,7 +292,8 @@ before running them. Their disposable test distro is named `LastbookTest`, with 
 See [the contributor test instructions](CONTRIBUTING.md#test) for the unit test command and platform requirements.
 
 `packaging/test_pack_tools.py SAMPLE WORK` checks the pack tools against a pack sample
-(`build_packs.py build <pack> --sample N`). The `mac_*` and `win_*`
+(`build_packs.py build <pack> --sample N`). `python3 -B packaging/test_state_maps.py` checks the country-publishing
+guard without source data. The `mac_*` and `win_*`
 scripts in `app/tests/` drive a real build against a real data folder, and their paths are placeholders
 (`/path/to/lastbook`, `C:\Users\you\app-test`) to set for your own machine.
 

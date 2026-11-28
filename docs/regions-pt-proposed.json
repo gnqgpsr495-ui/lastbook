@@ -1,0 +1,266 @@
+{
+  "about": "Proposed region definitions for detailed maps of Portugal: seven continental NUTS II, the Azores split into two regions that follow the INE address dataset's own two groups (Corvo and Flores are about 240 km west of the rest (242 km straight-line between the published Flores and Horta airport coordinates)), and Madeira. See docs/REGIONS-PT.md. Boxes carry full-precision inputs (CAOP 2025 polygon bounds for the mainland regions and Madeira; the two Azores boxes from the INE address groups' exact extremes) with the 0.15° outward margin floored/ceiled to 0.01°. The first revision read the polygon bounds from GISCO; every polygon box was since re-measured from the CAOP (Madeira 2026-11-22, the mainland 2026-11-25) and the GISCO numbers stay in the cross-checks.",
+  "status": "proposal",
+  "checked": "2026-11-20",
+  "codes": {
+    "proposal": "Lower-case with a hyphen, after the eu-<iso> style: pt-11, pt-19, pt-1a, pt-1b, pt-1c, pt-1d and pt-15 on the mainland, pt-20w/pt-20e for the Azores split, pt-30.",
+    "why": "NUTS codes for Portugal contain digits (PT11, PT1A), so no two-letter US code collides. The hyphen keeps them apart from US codes at a glance, as CA-ON does in REGIONS.md. Note carry_over() in engine/setup/install.py keeps only [A-Z]{2} address indexes on upgrade, so any hyphenated code needs that pattern extended (see REGIONS-ES.md's ES-MD note).",
+    "verified": "The NUTS 2021/2024 codes were read from GISCO's NUTS 2024 1:3M GeoJSON (opened). ISO 3166-2:PT (districts) was not checked against the ISO site."
+  },
+  "layer_keys": {
+    "terrain": "terrain.sqlite",
+    "water": "water.sqlite",
+    "dams": "water.sqlite (nid part today)",
+    "crops": "crops.sqlite",
+    "buildings": "buildings.sqlite",
+    "places": "places.sqlite",
+    "addresses": "derived/geo/addresses/<code>.sqlite",
+    "pois": "poi rows in national.sqlite"
+  },
+  "licences": {
+    "CC-BY-4.0": {
+      "name": "Creative Commons Attribution 4.0 International",
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "INE addresses: \"Instituto Nacional de Estatística, I.P.\" (per the OpenAddresses source file). GeoNames: \"give credit to GeoNames\". DGT/CAOP: attribution to the Direção-Geral do Território (confirmed from DGT's own open-data page, 2026-11-22); COS and MDT remain not checked.",
+      "share_alike": false,
+      "verified": "Attribution rows read from OpenAddresses' sources/pt/countrywide.json (opened 2026-11-20); DGT's CAOP licence confirmed 2026-11-22 (see the 22 November entry in REGIONS-PT.md)."
+    },
+    "Copernicus": {
+      "name": "Copernicus DEM licence",
+      "url": "https://dataspace.copernicus.eu/explore-data/data-collections/copernicus-contributing-missions/collections-description/COP-DEM",
+      "attribution": "As in REGIONS.md.",
+      "share_alike": false,
+      "verified": "Collection page opened 2026-11-20."
+    },
+    "ODbL-1.0": {
+      "name": "Open Database Licence 1.0",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "OSM contributors; Overture buildings blend OSM and Microsoft.",
+      "share_alike": true,
+      "verified": "As for the US map."
+    },
+    "Eurostat-GISCO-terms": {
+      "name": "Eurostat GISCO statistical geometry terms (not CC BY)",
+      "url": "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units",
+      "attribution": "© EuroGeographics, source acknowledged, notice visible in any publication using the data.",
+      "share_alike": false,
+      "commercial": false,
+      "verified": "Terms page opened 2026-11-20: free use 'on condition that the data will not be used for commercial purposes'. This proposal (research documentation in a free repository) fits; boxes derived from GISCO boundaries for redistribution inside a shipped map pack would not. The proposal's polygon boxes were re-measured from the CAOP on 2026-11-22 and 2026-11-25, so no box in this file derives from GISCO; these terms now cover the GISCO citations in the cross-checks only.",
+      "scope": "cross-check citations only, not pack contents"
+    }
+  },
+  "country_layers": [
+    "terrain",
+    "water",
+    "dams",
+    "crops",
+    "buildings",
+    "places",
+    "addresses",
+    "pois"
+  ],
+  "not_open_nationwide": [
+    "Postcode areas: the CTT dictionary is a commercial product and its terms were not verified (page did not answer from our route on 2026-11-20); expected to mirror the Correos/CNIG case in REGIONS-ES.md. The postcode attached to each address in the INE CC BY 4.0 data is a different thing and is what address search needs.",
+    "Per-region address cuts: Portugal's postcodes carry no province codes, and the region bounding boxes overlap heavily (1,842,324 of 5,911,139 rows fall in two or more boxes). A per-region index needs a municipality-to-region table from the INE municipality register, or per-municipality cuts keyed on the address rows' own city field.",
+    "Dams and hydrography inventories: APA/SNIAmb did not respond on 2026-11-20; OSM waterway=dam (805 ways, 35 nodes) and 1,922 weirs are the practical source meanwhile."
+  ],
+  "addressing": {
+    "postal_code": "Four digits, hyphen, three (1200-195); postcodes run 1000-9999, no leading zeros (the smallest prefix, 10, is Lisbon and holds 32,775 rows). Overture carries the full hyphenated form on every row, so the builder's left(postcode, 5) needs changing for Portugal (keep the four digits before the hyphen, or strip and keep the whole).",
+    "order": "Street type, street, number, floor and door, then postcode and town: \"Rua das Flores, 12, 1.º Dto., 1200-195 Lisboa\". Town after the postcode, so _parts()'s last-word postcode rule does not match.",
+    "notes": "normalize()/norm() keep only a-z0-9, so accents and cedillas split words: BARCOUÇO → 'barcou o', São Pedro → 's o pedro', Póvoa → 'p voa' (tried on 2026-11-20). Accent and cedilla folding is required on both sides. address_levels[1] holds the municipality in caps, so the builder's state = first two letters collides with US states (MAIA → MA, ALMADA → AL, COIMBRA → CO; VILA NOVA DE GAIA → VI is not a collision). There is no S-N convention (0 rows). Mirandese is co-official only in Miranda do Douro (Lei 7/99, search only)."
+  },
+  "regions": [
+    {
+      "code": "pt-11",
+      "name": "Norte",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT11",
+      "bbox": {
+        "west": -8.881059,
+        "south": 40.758764,
+        "east": -6.189159,
+        "north": 42.154312,
+        "margin_west": -9.04,
+        "margin_south": 40.6,
+        "margin_east": -6.03,
+        "margin_north": 42.31
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-19",
+      "name": "Centro",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT19",
+      "bbox": {
+        "west": -9.040261,
+        "south": 39.465251,
+        "east": -6.78096,
+        "north": 41.037485,
+        "margin_west": -9.2,
+        "margin_south": 39.31,
+        "margin_east": -6.63,
+        "margin_north": 41.19
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-1a",
+      "name": "Grande Lisboa",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT1A",
+      "bbox": {
+        "west": -9.500527,
+        "south": 38.673146,
+        "east": -8.84154,
+        "north": 39.064719,
+        "margin_west": -9.66,
+        "margin_south": 38.52,
+        "margin_east": -8.69,
+        "margin_north": 39.22
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-1b",
+      "name": "Península de Setúbal",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT1B",
+      "bbox": {
+        "west": -9.262976,
+        "south": 38.409074,
+        "east": -8.490972,
+        "north": 38.845424,
+        "margin_west": -9.42,
+        "margin_south": 38.25,
+        "margin_east": -8.34,
+        "margin_north": 39.0
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-1c",
+      "name": "Alentejo",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT1C",
+      "bbox": {
+        "west": -8.912868,
+        "south": 37.318936,
+        "east": -6.931499,
+        "north": 39.66368,
+        "margin_west": -9.07,
+        "margin_south": 37.16,
+        "margin_east": -6.78,
+        "margin_north": 39.82
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-1d",
+      "name": "Oeste e Vale do Tejo",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT1D",
+      "bbox": {
+        "west": -9.51703,
+        "south": 38.73149,
+        "east": -7.808988,
+        "north": 39.83873,
+        "margin_west": -9.67,
+        "margin_south": 38.58,
+        "margin_east": -7.65,
+        "margin_north": 39.99
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-15",
+      "name": "Algarve",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "NUTS II",
+      "nuts": "PT15",
+      "bbox": {
+        "west": -8.997546,
+        "south": 36.96171,
+        "east": -7.393304,
+        "north": 37.529131,
+        "margin_west": -9.15,
+        "margin_south": 36.81,
+        "margin_east": -7.24,
+        "margin_north": 37.68
+      },
+      "bbox_source": "CAOP 2025 (Continente) NUTS II polygon bounds, converted vertex by vertex from EPSG:3763"
+    },
+    {
+      "code": "pt-20w",
+      "name": "Açores: Corvo e Flores",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "autonomous region, western island group",
+      "nuts": "PT20 (west part)",
+      "ine_address_group": "AC25",
+      "bbox": {
+        "west": -31.265879650014835,
+        "south": 39.37487973166605,
+        "east": -31.110377979802912,
+        "north": 39.676565809244984,
+        "margin_west": -31.42,
+        "margin_south": 39.22,
+        "margin_east": -30.96,
+        "margin_north": 39.83
+      },
+      "bbox_source": "INE address points (group AC25)"
+    },
+    {
+      "code": "pt-20e",
+      "name": "Açores: restantes ilhas",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "autonomous region, central and eastern island groups",
+      "nuts": "PT20 (east part)",
+      "ine_address_group": "AC26",
+      "bbox": {
+        "west": -28.82501191957249,
+        "south": 36.92954860017521,
+        "east": -25.01379791719334,
+        "north": 39.095417419008164,
+        "margin_west": -28.98,
+        "margin_south": 36.77,
+        "margin_east": -24.86,
+        "margin_north": 39.25
+      },
+      "bbox_source": "INE address points (group AC26)"
+    },
+    {
+      "code": "pt-30",
+      "name": "Região Autónoma da Madeira",
+      "country": "Portugal",
+      "country_iso": "PT",
+      "admin_level": "autonomous region",
+      "nuts": "PT30",
+      "bbox": {
+        "west": -17.265938,
+        "south": 30.028778,
+        "east": -15.853671,
+        "north": 33.128161,
+        "margin_west": -17.42,
+        "margin_south": 29.87,
+        "margin_east": -15.7,
+        "margin_north": 33.28
+      },
+      "bbox_source": "CAOP 2025 (RAM) NUTS II polygon bounds, converted vertex by vertex from EPSG:5016 (see MAP-PT-30.md)"
+    }
+  ]
+}

@@ -339,6 +339,96 @@
           "release_note": "Videos that can't play now say why"
         }
       ]
+    },
+    {
+      "version": "1.1.16",
+      "highlights": [
+        {
+          "pr": 413,
+          "title": "Simplified Chinese in Lastbook",
+          "credit": "@LXD-8",
+          "handle": "LXD-8",
+          "illustration": {
+            "file": "fig-reader.svg",
+            "tone": "sage"
+          }
+        },
+        {
+          "pr": 364,
+          "title": "Turn PDF pages with arrow keys",
+          "credit": "@gnqgpsr495-ui",
+          "handle": "gnqgpsr495-ui",
+          "illustration": {
+            "file": "fig-reader.svg",
+            "tone": "sage"
+          }
+        },
+        {
+          "pr": 370,
+          "title": "See which library files are only in iCloud",
+          "credit": "@gnqgpsr495-ui",
+          "handle": "gnqgpsr495-ui",
+          "illustration": {
+            "file": "fig-laptop.svg",
+            "tone": "sage"
+          }
+        },
+        {
+          "pr": 421,
+          "title": "Keep download progress when the file still matches",
+          "credit": "@ModeEric",
+          "handle": "ModeEric",
+          "illustration": {
+            "file": "fig-laptop.svg",
+            "tone": "sage"
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.1.17",
+      "highlights": [
+        {
+          "pr": 329,
+          "title": "Update Lastbook from your Mac",
+          "credit": "@wonderdawg",
+          "handle": "wonderdawg",
+          "illustration": {
+            "file": "fig-laptop.svg",
+            "tone": "sage"
+          }
+        },
+        {
+          "pr": 411,
+          "title": "Contribute from the desktop sidebar",
+          "credit": "@wonderdawg",
+          "handle": "wonderdawg",
+          "illustration": {
+            "file": "fig-laptop.svg",
+            "tone": "sage"
+          }
+        },
+        {
+          "pr": 344,
+          "title": "Mark videos as watched",
+          "credit": "@shahzad-eth",
+          "handle": "shahzad-eth",
+          "illustration": {
+            "file": "fig-reader.svg",
+            "tone": "sage"
+          }
+        },
+        {
+          "pr": 314,
+          "title": "Filter Chat sources by type",
+          "credit": "@nskpaun",
+          "handle": "nskpaun",
+          "illustration": {
+            "file": "fig-reader.svg",
+            "tone": "sage"
+          }
+        }
+      ]
     }
   ]
 }

@@ -33,7 +33,7 @@ def clean_sysconfig():
 
 datas = files('web', 'web') + files('content', 'content', 'gaps.json') + files('content/topics', 'content/topics', '*.json')
 binaries = []
-hidden = ['server', 'retrieval', 'assistant', 'llm_local', 'engine.paths', 'engine.library', 'engine.safe_paths', 'engine.encyclopedias', 'engine.saved_pages', 'engine.address_search', 'engine.page_tables', 'engine.notes', 'bridge', 'shell_macos', 'PyObjCTools.AppHelper']
+hidden = ['server', 'retrieval', 'assistant', 'llm_local', 'engine.paths', 'engine.library', 'engine.safe_paths', 'engine.encyclopedias', 'engine.saved_pages', 'engine.address_search', 'engine.page_tables', 'engine.notes', 'engine.model_server', 'bridge', 'shell_macos', 'PyObjCTools.AppHelper', 'update_macos']
 # The optional local AI's runner (packaging/llm/build_llm_macos.sh), in Contents/Frameworks/llm/. The model itself never ships.
 LLM = ROOT / 'derived' / 'llm' / 'bin-mac'
 binaries += [(str(LLM / 'lastbook-llm'), 'llm')]
@@ -63,8 +63,19 @@ a = Analysis([str(APP / 'main.py')], pathex=[str(clean_sysconfig()), str(APP), s
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [('X utf8', None, 'OPTION')], exclude_binaries=True, name='Lastbook', console=False, argv_emulation=False, target_arch='arm64', codesign_identity=None, entitlements_file=None)
 coll = COLLECT(exe, a.binaries, a.datas, name='Lastbook')
+# Update now (app/update_macos.py): only when build_app_macos.sh verified a pinned Sparkle.framework and was given the public key.
+# Without both, the app has no SU* keys and About offers the download page. The key is public; the private one never comes here.
+SPARKLE_KEY = os.environ.get('LASTBOOK_SPARKLE_PUBLIC_ED_KEY', '')
+SPARKLE = {}
+if SPARKLE_KEY:
+    import sys
+    sys.path.insert(0, str(APP))
+    import update_macos
+    SPARKLE = {k: v for k, v in update_macos.REQUIRED.items() if k != 'CFBundleIdentifier'} | {'SUPublicEDKey': SPARKLE_KEY}
+    if not update_macos.public_key_ok(SPARKLE_KEY):
+        raise SystemExit('LASTBOOK_SPARKLE_PUBLIC_ED_KEY is not a base64 Ed25519 public key')
 ICON = Path(SPECPATH) / 'Lastbook.icns'
-app = BUNDLE(coll, name='Lastbook.app', icon=str(ICON) if ICON.exists() else None, bundle_identifier='local.lastbook.desktop', version='1.1.14', info_plist={
+app = BUNDLE(coll, name='Lastbook.app', icon=str(ICON) if ICON.exists() else None, bundle_identifier='local.lastbook.desktop', version='1.1.19', info_plist={
     'CFBundleDisplayName': 'Lastbook',
     'CFBundleName': 'Lastbook',
     'LSApplicationCategoryType': 'public.app-category.reference',
@@ -75,4 +86,4 @@ app = BUNDLE(coll, name='Lastbook.app', icon=str(ICON) if ICON.exists() else Non
     'NSDocumentsFolderUsageDescription': 'Lastbook looks here for its library, the LastbookData folder. It reads and saves only inside that folder.',
     'NSDownloadsFolderUsageDescription': 'Lastbook looks here for its library, the LastbookData folder. It reads and saves only inside that folder.',
     'NSDesktopFolderUsageDescription': 'Lastbook looks here for its library, the LastbookData folder. It reads and saves only inside that folder.',
-})
+} | SPARKLE)

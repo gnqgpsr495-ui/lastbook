@@ -17,7 +17,6 @@
   "axe",
   "plumbing",
   "faucet",
-  "toilet",
   "water heater",
   "woodworking",
   "carpentry",
@@ -33,7 +32,7 @@
   "compost bin",
   "plans",
   "safety",
-  "PPE"
+  "PPE", "goggles"
  ],
  "choices": [
   {
@@ -64,7 +63,7 @@
   {
    "id": "dull",
    "label": "My blades and edge tools are dull",
-   "hint": "Chisels, axes, saws, knives, hoes",
+   "hint": "Chisels, axes, saws, knives, hoes, honing",
    "read": [
     {
      "doc": "mfg2-7e54a5d6ccd6e584",
@@ -88,7 +87,7 @@
   {
    "id": "plumbing",
    "label": "A tap drips or the toilet keeps running",
-   "hint": "Basic plumbing fixes",
+   "hint": "Basic plumbing fixes, leaking toilet or tap",
    "read": [
     {
      "doc": "eng-cc45c31a68f597a7",
@@ -160,7 +159,7 @@
   {
    "id": "build",
    "label": "I want to build a bench, bin or small structure",
-   "hint": "Workbench, compost bins, cold frame",
+   "hint": "Workbench, compost bins, cold frame, greenhouse",
    "read": [
     {
      "doc": "eng-f547be2abcd61da0",

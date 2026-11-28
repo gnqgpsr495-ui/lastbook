@@ -149,6 +149,97 @@ as one map.
 
 [REGIONS-MX.md](REGIONS-MX.md) does the same for Mexico's 32 states (entidades federativas).
 
+[REGIONS-BR.md](REGIONS-BR.md) does the same for Brazil's 26 states and the Federal District (Distrito Federal), 27 in all.
+
+[REGIONS-BO.md](REGIONS-BO.md) does the same for Bolivia as one country-wide region, with its nine departments as an
+alternative.
+[MAP-BO-L.md](MAP-BO-L.md) describes a first build from the Bolivia proposal: a detailed map of La Paz department,
+cut by its COD-AB box from Geofabrik's Bolivia extract. It depends on the prototype region map builder from the
+still-open pull request #80, at commit `a453274`; that builder is not in the main branch.
+
+[MAP-DE-BE.md](MAP-DE-BE.md) builds one of the German states, Berlin, as an offline map set with an address index
+(`tools/build_region_de_be.py`); searching that index the German way is runtime work in #79.
+
+[REGIONS-PT.md](REGIONS-PT.md) does the same for Portugal's ten regions, with the INE address data measured.
+[MAP-PT-30.md](MAP-PT-30.md) builds the first one: Madeira (PT-30), from the official CAOP box, INE addresses and
+OpenStreetMap.
+
+### To do: maps for every place on Earth
+
+The goal is a detailed map for any place a person lives.
+
+- [ ] **Region ids.** The manifest already accepts map ids such as `DE-BE` and `CA-ON`. Address-index ids in
+  `engine/setup/manifest.py` and the address-index filenames carried over by `engine/setup/install.py` still use
+  two capital letters. The map builders in `packaging/state_maps.py` and `packaging/build_packs.py` use US regions.
+  Most proposals above use ISO 3166-2 ids to avoid reusing US state codes such as `DE` and `CA`.
+- [ ] **Sources.** Pick an open replacement for each US dataset, region by region, with its licence. The region
+  proposals above do this.
+- [ ] **No Southern California box.** `server.py` assumes `map.sqlite` covers Southern California (`_poi_sources`,
+  `socal_classes`).
+- [ ] **Setup.** First run asks for a US state map (#267). Installing several maps or a locally built map through
+  Setup is #53. A hand-built library already opens with [`--data`](#opening-a-locally-built-map-on-windows).
+- [ ] **Address search.** It knows US state names and US street words. Other countries write the number after the
+  street, fold accents, or have no postcode.
+- [ ] **Units.** The map shows distances in miles above 1.6 km and contour lines in feet (`web/map.js`).
+- [ ] **Emergency number** for the person's country (#261).
+
+The design discussion is in #23, #25, #31 and #95.
+
+## Building the place finder for a region outside the US
+
+`tools/build_places_region.py` builds the two files the app already reads — `places.sqlite` (`place` +
+`place_fts`) and the `poi` table of `national.sqlite` — from one OpenStreetMap extract, so a region does not
+need a federal gazetteer of its own. Each region writes into its own directory
+(`derived/geo/regions/<region>/` by default), so a regional build cannot truncate the shared databases.
+Before any database write, the tool checks both target files read-only and refuses existing databases without
+its builder marker or with a different region marker, with or without `--fresh`. `--fresh` only clears owned
+target files and also refuses a directory containing other SQLite databases.
+Merging the per-region files into the shipped packs stays with the regional pipeline that calls this tool.
+
+```bash
+python3 tools/build_places_region.py australia-latest.osm.pbf --region Australia
+python3 tools/build_places_region.py 'New Zealand'.osm.pbf --region 'New Zealand' --bbox=166,-48,179,-34
+# only part of an extract, or another directory:
+python3 tools/build_places_region.py oceania.osm.pbf --region 'New South Wales' --bbox=141,-38,154,-28 \
+    --out derived/geo/regions/au-nsw
+```
+
+- `--bbox` is **west,south,east,north** in degrees — longitude first, the order a Geofabrik country box and a
+  GeoJSON envelope use, so a region's box can be passed straight through. Before reading the extract or
+  touching output, the tool rejects non-finite numbers, longitude outside [-180,180], latitude outside [-90,90],
+  west > east or south > north. A valid box matching nothing produces a warning.
+- `--no-poi` writes only `places.sqlite`. Where a region map from the map pipeline already fills the `poi`
+  table from the same extract, the place finder is the only part missing and this keeps the two from
+  writing the same thing twice.
+- **Places** come from `place=city/town/village/hamlet/suburb/…`, as nodes or as areas, with the rank order
+  the finder sorts by (city 1, town 2, village 3, hamlet 4, suburb 5). A `name:zh` (or `name:en/ru/es/fr/ar`)
+  goes in front of `detail`, which `place_fts` indexes, so the finder matches other-language queries:
+  `悉尼` finds Sydney, `悉尼唐人街` finds Chinatown.
+- **Help points** are `amenity=hospital/clinic/doctors/dentist/pharmacy/police/fire_station/drinking_water/
+  shelter/toilets/fuel/water_point`, `emergency=ambulance_station/water_tank`,
+  `shop=supermarket/convenience/hardware/doityourself` and `tourism=camp_site/alpine_hut/wilderness_hut`.
+  Closed ways and multipolygons are read as areas (a hospital drawn as a building is not dropped), and
+  unnamed help points are kept.
+- The class says what the thing is: `drinking_water=no` is `water_point`, a firefighting `emergency=water_tank`
+  stays `water_tank`, an `emergency=ambulance_station` stays `ambulance_station` instead of being relabelled as
+  a fire station. `amenity=shelter` is a bus shelter in much of the world: a shelter is kept when it is
+  tagged `weather_shelter`/`basic_hut`, or when it has a name and no `shelter_type`. Other shelter types and
+  anonymous shelters with no type are excluded. Classes with no layer yet are in the data but not drawn,
+  as the US classes already are.
+- **Australia**, from the Geofabrik extract of 17 November 2026: 39,563 places and 88,218 help points,
+  6.8 MB + 9.1 MB. That is more than the node-only version did — suburb and island polygons are read as
+  places, hospitals and clinics mapped as buildings are kept, and unnamed help points such as public toilets
+  and drinking-water taps no longer need a name to be useful. Running the same region again adds no
+  duplicates.
+
+`tools/test_build_places_region.py` checks the schema, the rank order, the `place_fts` prefix query in English
+and Chinese, the shelter filter, the meaning of the water and ambulance tags, nodes and polygons, unnamed
+points, bbox order and invalid-coordinate rejection, a rerun without duplicates, and byte-for-byte protection
+of shared or other-region databases on normal/fresh builds and rejected input. It needs
+only pyosmium (already a build-time dependency in `tools/build_coast.py`) and no data folder.
+
+The data is OpenStreetMap, ODbL: a pack built from it must carry the attribution the other OSM layers already do.
+
 ## Checking a map change
 
 - A change to a layer in `web/map.js` is a change you can see: include screenshots in light and dark mode.

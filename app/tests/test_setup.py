@@ -8,7 +8,7 @@ The test server lives only in this file: it serves a small fake pack and model o
 for the run, and can cut the connection mid-file, send wrong bytes, change the file's ETag, ignore Range, or redirect anywhere.
 The product's allowlist is not touched: tests pass their own `allowed` and TLS context to the downloader. Never packaged.
 """
-import errno, hashlib, http.server, importlib.util, io, json, os, re, shutil, signal, socket, socketserver, ssl, subprocess, sys, threading, time, unittest, zipfile
+import errno, hashlib, http.server, importlib.util, io, json, os, re, shutil, signal, socket, socketserver, ssl, struct, subprocess, sys, threading, time, unittest, zipfile
 from pathlib import Path
 from unittest import mock
 
@@ -17,7 +17,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 sys.path[:0] = [str(HERE.parent), str(ROOT)]
 from engine.setup import api, download, hardware, install, manifest  # noqa: E402
-from app.tests import shorttemp  # noqa: E402
+from app.tests import multipart_fixture, shorttemp  # noqa: E402
 
 ALLOWED = {'127.0.0.1'}     # an address, not 'localhost': Windows tries ::1 first, which the test server does not listen on
 MiB = 1024 * 1024
@@ -187,6 +187,33 @@ def start_server(folder, files):
     return srv, cctx, f'https://127.0.0.1:{srv.server_address[1]}'
 
 
+class ResetServer:
+    """A host this network cannot reach: every connection is accepted and at once reset, before any answer, as a network that
+    blocks a host does (#254). .url(name) is an address on it the tests allow."""
+
+    def __init__(self):
+        self.sock = socket.create_server(('127.0.0.1', 0))
+        self.count = 0
+        threading.Thread(target=self.serve, daemon=True).start()
+
+    def url(self, name):
+        return f'https://127.0.0.1:{self.sock.getsockname()[1]}/{name}'
+
+    def serve(self):
+        linger = struct.pack('HH' if sys.platform == 'win32' else 'ii', 1, 0)    # close with a reset, not a goodbye
+        while True:
+            try:
+                c, _ = self.sock.accept()
+            except OSError:
+                return
+            self.count += 1
+            c.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, linger)
+            c.close()
+
+    def close(self):
+        self.sock.close()
+
+
 class Control:
     def __init__(self):
         self.ev = threading.Event()
@@ -234,13 +261,13 @@ class Base(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
-    def manifest(self, zip_sha=None, model_sha=None, more_packs=()):
+    def manifest(self, zip_sha=None, model_sha=None, more_packs=(), model_url=None):
         m = {'version': 1, 'published': '2026-11-12',
              'packs': [{'id': 'small', 'title': 'Small', 'summary': 's', 'records': 3, 'installed_bytes': self.installed, 'available': True,
                         'files': [{'name': 'Lastbook-Small.zip', 'url': f'{self.base}/Lastbook-Small.zip', 'size': len(self.zip),
                                    'sha256': zip_sha or sha(self.zip), 'kind': 'zip'}]},
                        {'id': 'all', 'title': 'All', 'available': False, 'files': []}],
-             'models': [{'id': 'gemma', 'title': 'Gemma', 'file': 'model.gguf', 'url': f'{self.base}/model.gguf', 'size': len(self.model),
+             'models': [{'id': 'gemma', 'title': 'Gemma', 'file': 'model.gguf', 'url': model_url or f'{self.base}/model.gguf', 'size': len(self.model),
                          'sha256': model_sha or sha(self.model), 'memory_bytes': 19_027_384_256, 'available': True}]}
         m['packs'][1:1] = more_packs
         v = manifest.validate(m, ALLOWED)
@@ -278,6 +305,30 @@ class fast_backoff:
 
 
 # ----------------------------------------------------------------------------------------------------------- tests --
+class ReleaseManifest(unittest.TestCase):
+    def test_rejects_invalid_generated_part_before_replacing_manifest(self):
+        from app.tests.multipart_fixture import write_fixture
+        from tempfile import TemporaryDirectory
+
+        spec = importlib.util.spec_from_file_location('release_manifest', ROOT / 'packaging/release_manifest.py')
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp) / 'fixture'
+            write_fixture(folder)
+            output = folder / 'single.json'
+            original = output.read_bytes()
+            parts = folder / 'generated'
+            args = ['release_manifest', '--packs', str(output), '--out', str(output), '--part-bytes', '128',
+                    '--split-pack', str(folder / 'Lastbook-Small.zip'), '--parts-dir', str(parts)]
+            # The input ZIP is pinned to the correct host. Only the generated part URLs are invalid.
+            with mock.patch.object(builder, 'BASE', 'https://example.invalid'), mock.patch.object(sys, 'argv', args):
+                with self.assertRaisesRegex(SystemExit, 'parts'):
+                    builder.main()
+            self.assertEqual(output.read_bytes(), original)
+            self.assertFalse(parts.exists())
+
+
 class Allowlist(unittest.TestCase):
     def test_product_hosts(self):
         ok = ['https://downloads.lastbook.org/1.0.0/Lastbook-Small.zip',
@@ -468,7 +519,71 @@ class Downloads(Base):
         self.files.etag['model.gguf'] = '"new"'
         d.run()
         self.assertEqual(Path(d.dest).read_bytes(), self.model)
-        self.assertEqual([r for _, r, _ in self.files.log], ['bytes=600000-', None])   # tried to resume, then started over
+        self.assertEqual([r for _, r, _ in self.files.log], ['bytes=600000-', 'bytes=0-599999', None])   # tried to resume, compared what was here, then started over
+
+    def stale(self, d, data, n, etag='"old"'):
+        """Leaves the first n bytes of `data` as d's partial file, saved under an ETag the server no longer gives."""
+        os.makedirs(os.path.dirname(d.part), exist_ok=True)
+        Path(d.part).write_bytes(data[:n])
+        Path(d.meta).write_text(json.dumps({'url': d.url, 'size': d.size, 'sha256': d.sha256, 'etag': etag, 'bytes_done': n}))
+
+    def test_etag_changed_same_bytes_keeps_the_part(self):
+        """The server's copy got a new ETag (uploaded again, say) but holds the same bytes: what is here is kept (#208)."""
+        d = self.dl('model.gguf')
+        self.stale(d, self.model, 600_000)
+        self.files.etag['model.gguf'] = '"new"'
+        seen = []
+        d.progress = lambda done, total, phase: phase == 'downloading' and seen.append(done)
+        d.run()
+        self.assertEqual(Path(d.dest).read_bytes(), self.model)
+        log = [r for _, r, _ in self.files.log]
+        self.assertEqual(log[0], 'bytes=600000-')
+        self.assertNotIn(None, log)                                   # never asked for the whole file
+        self.assertTrue(all(int(r[6:].split('-')[1]) < 600_000 for r in log[1:]), log)   # the rest: samples of what was here
+        self.assertEqual(min(seen), 600_000)                          # and the count never went back
+
+    def test_etag_changed_sample_differs_starts_over(self):
+        """One byte of what is here is not the server's: that is another file, and it starts over as before."""
+        d = self.dl('model.gguf')
+        self.stale(d, self.model[:599_999] + bytes([self.model[599_999] ^ 1]), 600_000)
+        self.files.etag['model.gguf'] = '"new"'
+        d.run()
+        self.assertEqual(Path(d.dest).read_bytes(), self.model)
+        self.assertEqual([r for _, r, _ in self.files.log][-1], None)
+
+    def test_etag_changed_between_the_samples_is_left_to_the_checksum(self):
+        """The comparison looks at stretches, not at every byte. A difference between them is found by the SHA-256 at the end, as
+        for any download that came out wrong."""
+        d = self.dl('model.gguf')
+        self.stale(d, self.model[:150_000] + bytes([self.model[150_000] ^ 1]) + self.model[150_001:], 600_000)
+        self.files.etag['model.gguf'] = '"new"'
+        with mock.patch.object(download, 'SAMPLE', 1000), self.assertRaises(download.BadChecksum):
+            d.run()
+        self.assertEqual([r for _, r, _ in self.files.log], ['bytes=600000-', 'bytes=0-999', 'bytes=299500-300499', 'bytes=599000-599999'])
+        self.assertFalse(Path(d.part).exists() or Path(d.dest).exists())
+
+    def test_etag_changed_and_the_check_breaks_keeps_the_part(self):
+        """A busy answer and a cut connection during the comparison are waited out like any other: nothing is thrown away."""
+        d = self.dl('model.gguf')
+        self.stale(d, self.model, 600_000)
+        self.files.etag['model.gguf'] = '"new"'
+        self.files.answers['model.gguf'] = [None, (503, None)]        # the resume is answered, the first sample is not
+        with fast_backoff():
+            d.run()
+        self.assertEqual(Path(d.dest).read_bytes(), self.model)
+        self.assertNotIn(None, [r for _, r, _ in self.files.log])
+
+    def test_etag_changed_and_the_check_gets_the_whole_file_keeps_the_part(self):
+        """A 200 to a sample tells nothing about what is here. It gives up as a network failure with the partial file kept."""
+        d = self.dl('model.gguf')
+        self.stale(d, self.model, 600_000)
+        self.files.etag['model.gguf'] = '"new"'
+        self.files.answers['model.gguf'] = [None, 'whole'] * download.NETWORK_TRIES     # each resume is answered, each sample is not
+        with fast_backoff(), self.assertRaises(download.Failed) as e:
+            d.run()
+        self.assertEqual(e.exception.code, 'network')
+        self.assertEqual(os.path.getsize(d.part), 600_000)
+        self.assertEqual(json.loads(Path(d.meta).read_text())['etag'], '"old"')   # so the next try checks again
 
     def test_server_ignores_range(self):
         """A 200 with the whole file to a resume (seen on downloads.lastbook.org for minutes after an upload): after one more ask,
@@ -528,6 +643,27 @@ class Downloads(Base):
         self.assertEqual(e.exception.code, 'network')
         self.assertIn('could not confirm it is talking to the download server', e.exception.message)
         self.assertLess(time.time() - t0, 5)          # no retries
+
+    def test_host_that_never_answers_is_unreachable(self):
+        """A host reset before it answers, every time (huggingface.co on some networks, #254): retrying on this network will not
+        help, so the download gives up as 'unreachable', naming the host, after the same tries as a broken connection."""
+        blocked = ResetServer()
+        self.addCleanup(blocked.close)
+        d = download.Download(blocked.url('model.gguf'), self.tmp / 'dl' / 'model.gguf', len(self.model), sha(self.model),
+                              download.Control(), allowed=ALLOWED, context=self.ctx)
+        with fast_backoff(), self.assertRaises(download.Failed) as e:
+            d.run()
+        self.assertEqual((e.exception.code, e.exception.extra), ('unreachable', {'host': '127.0.0.1'}))
+        self.assertIn('could not reach 127.0.0.1', e.exception.message)
+        self.assertEqual(blocked.count, download.NETWORK_TRIES)
+
+    def test_host_that_answered_then_broke_is_network(self):
+        """A server that answers, then cuts every answer before a byte of the file, is reachable: that stays 'network'."""
+        self.files.cut_after['model.gguf'] = [0] * (download.NETWORK_TRIES + 2)
+        with fast_backoff(), self.assertRaises(download.Failed) as e:
+            self.dl('model.gguf').run()
+        self.assertEqual(e.exception.code, 'network')
+        self.assertIn('kept breaking', e.exception.message)
 
     def test_roots_only(self):
         ctx = download.tls_context()
@@ -751,6 +887,42 @@ class ParallelDownloads(Base):
             self.assertEqual(Path(d.run()).read_bytes(), self.big)
         self.assertIn('bytes=0-262143', self.ranges())
 
+    def test_etag_changed_same_bytes_keeps_the_part(self):
+        """The same over several connections: the hashed run is kept, and the pieces carry on from it (#208)."""
+        d = self.dl()
+        os.makedirs(os.path.dirname(d.part), exist_ok=True)
+        Path(d.part).write_bytes(self.big[:512 * 1024] + b'\0' * (300 * 1024))     # and a window past it, not vouched for
+        Path(d.meta).write_text(json.dumps({'url': d.url, 'size': d.size, 'sha256': d.sha256, 'etag': '"old"', 'bytes_done': 512 * 1024, 'parallel': True}))
+        self.files.etag['big.bin'] = '"new"'
+        with pieces():
+            self.assertEqual(Path(d.run()).read_bytes(), self.big)
+        r = self.ranges()
+        self.assertNotIn('bytes=0-262143', r)                              # the first piece was not fetched again
+        self.assertNotIn(None, r)
+        self.assertIn(f'bytes={len(self.big) - 4321}-{len(self.big) - 1}', r)   # the last one came as a piece: still several connections
+
+    def test_etag_changed_and_the_check_breaks_keeps_the_part(self):
+        """The comparison could not be made (a busy server): it goes on over one connection, which waits and checks again."""
+        d = self.dl()
+        os.makedirs(os.path.dirname(d.part), exist_ok=True)
+        Path(d.part).write_bytes(self.big[:512 * 1024])
+        Path(d.meta).write_text(json.dumps({'url': d.url, 'size': d.size, 'sha256': d.sha256, 'etag': '"old"', 'bytes_done': 512 * 1024, 'parallel': True}))
+        self.files.etag['big.bin'] = '"new"'
+        real = download.Download._same_bytes
+
+        def busy_once(self_, n, ctx):
+            if not busy_once.done:
+                busy_once.done = True
+                self.files.answers['big.bin'] = [(503, None)]
+            return real(self_, n, ctx)
+        busy_once.done = False
+        with pieces(), fast_backoff(), mock.patch.object(download.Download, '_same_bytes', busy_once):
+            self.assertEqual(Path(d.run()).read_bytes(), self.big)
+        r = self.ranges()
+        self.assertNotIn(None, r)
+        self.assertNotIn('bytes=0-262143', r)
+        self.assertIn(f'bytes={512 * 1024}-', r)                           # carried on over one connection from the hashed run
+
     def test_server_ignores_range_goes_to_one_connection(self):
         self.files.ignore_range.add('big.bin')
         with pieces(), fast_backoff():
@@ -777,6 +949,16 @@ class ParallelDownloads(Base):
         d = self.dl(size=len(self.big) + 10)
         with pieces(), self.assertRaises(download.BadChecksum):
             d.run()
+
+    def test_unreachable_over_several_connections(self):
+        """A large file from a host that never answers gives up as 'unreachable' over pieces too."""
+        blocked = ResetServer()
+        self.addCleanup(blocked.close)
+        d = download.Download(blocked.url('big.bin'), self.tmp / 'dl' / 'big.bin', len(self.big), sha(self.big), download.Control(),
+                              allowed=ALLOWED, context=self.ctx)
+        with pieces(), fast_backoff(), self.assertRaises(download.Failed) as e:
+            d.run()
+        self.assertEqual((e.exception.code, e.exception.extra), ('unreachable', {'host': '127.0.0.1'}))
 
     def test_redirect_to_unknown_host_refused(self):
         self.files.redirect['big.bin'] = 'https://evil.example/big.bin'
@@ -1053,6 +1235,67 @@ class Unpacking(Base):
         self.assertEqual((lib / 'derived' / 'geo' / 'map.sqlite').stat().st_size, MiB)
 
 
+class SplitPacks(Base):
+    def split_manifest(self):
+        folder = self.tmp / 'fixture'
+        catalog = multipart_fixture.write_fixture(folder)
+        pack = catalog['packs'][0]
+        parts = pack['parts']
+        for file in pack['files'] + parts:
+            name = file['name']
+            file['url'] = f'{self.base}/{name}'
+            self.files.data[name] = (folder / name).read_bytes()
+        self.zip = self.files.data['Lastbook-Small.zip']
+        (self.tmp / 'Lastbook-Small.zip').write_bytes(self.zip)
+        bundled = manifest.validate(catalog, ALLOWED, bundled=True)
+        return manifest.Manifest(bundled=bundled, remote=None, allowed=ALLOWED, context=self.ctx), parts
+
+    def test_only_bundled_catalog_can_supply_parts(self):
+        catalog, parts = self.split_manifest()
+        fetched = manifest.validate(catalog.current, ALLOWED)
+        self.assertNotIn('parts', fetched['packs'][0])
+        self.assertNotIn('parts', catalog.public()['packs'][0])
+        invalid = {**catalog.current, 'packs': [{**catalog.current['packs'][0], 'parts': parts[::-1][1:]}]}
+        self.assertIsNone(manifest.validate(invalid, ALLOWED, bundled=True))
+
+    def test_resumes_split_pack_after_a_missing_part(self):
+        catalog, parts = self.split_manifest()
+        original = 'Lastbook-Small.zip'
+        del self.files.data[original]
+        absent = parts[-1]['name']
+        tail = self.files.data.pop(absent)
+        s = self.setup(manifest=catalog)
+        s.start('small')
+        self.assertEqual(self.wait(s)['error']['code'], 'network')
+        work = self.parent / 'LastbookData.setup' / 'downloads' / 'pack-parts'
+        first, second = (work / part['name'] for part in parts[:2])
+        self.assertEqual(first.read_bytes(), self.zip[:parts[0]['size']])
+        good = second.read_bytes()
+        second.write_bytes(bytes([good[0] ^ 1]) + good[1:])
+        self.files.data[absent] = tail
+        del self.files.data[first.name]  # the verified saved part must be reusable even if its URL is unavailable
+
+        self.files.log.clear()
+        restarted = self.setup(manifest=catalog)
+        restarted.retry()
+        job = self.wait(restarted)
+        self.assertEqual(job['state'], 'done', job)
+        library, note = api.startup(self.settings)
+        self.assertFalse(note.get('error'))
+        self.assertNotIn(first.name, [request[0] for request in self.files.log])
+        self.assertEqual((library / 'library-data' / 'example.txt').read_bytes(), b'A small offline library.\n')
+
+    def test_original_zip_import_still_works_with_a_split_pack(self):
+        catalog, _ = self.split_manifest()
+        self.files.data.clear()
+        source = self.tmp / 'Lastbook-Small.zip'
+        s = self.setup(manifest=catalog)
+        s.use(str(source))
+        job = self.wait(s)
+        self.assertEqual(job['state'], 'done', job)
+        self.assertEqual(source.read_bytes(), self.zip)
+
+
 class Jobs(Base):
     def test_first_run_end_to_end(self):
         s = self.setup()
@@ -1193,6 +1436,100 @@ class Jobs(Base):
         self.files.data['model.gguf'] = self.model
         s.retry()
         self.assertEqual(self.wait(s)['state'], 'done')
+
+    def unreachable_model(self):
+        """A first run whose library downloads and whose local AI is on a host this network cannot reach (#254)."""
+        blocked = ResetServer()
+        self.addCleanup(blocked.close)
+        s = self.setup(manifest=self.manifest(model_url=blocked.url('model.gguf')))
+        with fast_backoff():
+            s.start('small', True)
+            j = self.wait(s)
+        return s, j, blocked
+
+    def test_unreachable_model_says_so_with_the_file(self):
+        """The stop names the host and carries what is needed to fetch the file another way: its name, size, address and
+        SHA-256. The library is installed; only the AI waits."""
+        s, j, blocked = self.unreachable_model()
+        self.assertEqual((j['state'], [i['state'] for i in j['items']]), ('failed', ['done', 'failed']))
+        self.assertEqual(j['error'], {'code': 'unreachable', 'message': 'Lastbook could not reach 127.0.0.1 from this network.',
+                                      'host': '127.0.0.1', 'name': 'model.gguf', 'size': len(self.model),
+                                      'url': blocked.url('model.gguf'), 'sha256': sha(self.model)})
+        self.assertEqual(j['items'][1]['error'], j['error'])
+        self.assertTrue((self.parent / 'LastbookData.setup' / 'unpack' / 'LastbookData' / 'library-data' / 'catalog.json').exists())   # unpacked, kept
+
+    def test_unreachable_model_then_the_file_chosen(self):
+        """Fetched elsewhere and chosen (use), the file goes to the stopped job: it is checked, the AI is installed, and nothing
+        more is asked of the blocked host."""
+        s, j, blocked = self.unreachable_model()
+        tries = blocked.count
+        got = self.home / 'Downloads' / 'model.gguf'
+        got.write_bytes(self.model)
+        r = s.use(str(got))
+        self.assertIn(r['state'], ('waiting', 'verifying', 'activating', 'done'))
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual(blocked.count, tries)
+        self.assertEqual(s.finish()['folder'], str(self.parent / 'LastbookData'))
+        time.sleep(0.6)
+        lib, note = api.startup(self.settings)
+        self.assertEqual((lib / 'models' / 'model.gguf').read_bytes(), self.model)
+        self.assertEqual(note['model_file'], str(lib / 'models' / 'model.gguf'))
+
+    def test_unreachable_model_with_part_already_downloaded_then_the_file_chosen(self):
+        """#294 review: a retry that stops as 'unreachable' after an earlier try had downloaded part of the model. The card offers
+        Choose AI model file there too, so the API must take the chosen file for that job as well (it used to only when no byte had
+        come). The partial download is not used: the chosen file is checked and installed."""
+        s, j, blocked = self.unreachable_model()
+        part = Path(s.job['plan']['work']) / 'downloads' / 'model.gguf.part'
+        part.parent.mkdir(parents=True, exist_ok=True)
+        part.write_bytes(self.model[:1000])                              # what an earlier try had got
+        with s.lock:
+            s.job['items'][1]['bytes_done'] = 1000                       # the saved progress the card is drawn from
+        tries = blocked.count
+        got = self.home / 'Downloads' / 'model.gguf'
+        got.write_bytes(self.model)
+        r = s.use(str(got))
+        self.assertIsNone(r.get('error'), r)
+        self.assertNotEqual(r['state'], 'failed', r)                     # the job carries on with the chosen file
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual(blocked.count, tries)
+        self.assertEqual(s.finish()['folder'], str(self.parent / 'LastbookData'))
+        time.sleep(0.6)
+        lib, _ = api.startup(self.settings)
+        self.assertEqual((lib / 'models' / 'model.gguf').read_bytes(), self.model)
+
+    def test_a_network_stop_with_part_downloaded_is_left_to_retry(self):
+        """Unchanged from #260: a 'network' stop after some of the model came is a dropped connection. The card offers Retry, not
+        the picker, and choosing the file there does not resume that job."""
+        self.files.cut_after['model.gguf'] = [700_000] + [0] * (download.NETWORK_TRIES + 2)
+        s = self.setup()
+        with fast_backoff():
+            s.start('small', True)
+            j = self.wait(s)
+        self.assertEqual((j['state'], j['error']['code']), ('failed', 'network'), j)
+        self.assertGreater(j['items'][1]['bytes_done'], 0)
+        got = self.home / 'Downloads' / 'model.gguf'
+        got.write_bytes(self.model)
+        s.use(str(got))
+        self.assertEqual(s.public_job()['state'], 'failed')
+
+    def test_unreachable_model_wrong_file_chosen(self):
+        """A file of another size is refused at once; one of the right size but other bytes stops as found_mismatch and is left
+        where it is."""
+        s, j, blocked = self.unreachable_model()
+        short = self.home / 'Downloads' / 'model.gguf'
+        short.write_bytes(self.model[:-1])
+        r = s.use(str(short))
+        self.assertEqual(r['code'], 'size')
+        self.assertIn(f'{len(self.model) - 1:,} bytes, not the {len(self.model):,}', r['error'])
+        self.assertEqual(s.public_job()['error']['code'], 'unreachable')      # the stop is unchanged
+        short.write_bytes(b'x' * len(self.model))
+        s.use(str(short))
+        j = self.wait(s)
+        self.assertEqual((j['state'], j['error']['code']), ('failed', 'found_mismatch'))
+        self.assertEqual(short.read_bytes(), b'x' * len(self.model))
 
     def test_pause_resume_cancel(self):
         self.files.pace = 0.01
@@ -1489,6 +1826,20 @@ class Jobs(Base):
         self.assertEqual(first.use(str(zips))['items'][0]['kind'], 'pack')          # first run's "Choose a library zip" as before
         self.wait(first)
 
+    def test_use_zip_is_an_offline_import_in_the_chosen_folder(self):
+        """wonderdawg on #465: a library zip already here installs in the folder chosen on screen with nothing downloaded,
+        even with the AI ticked on screen and a model server that refuses: the AI, a map or addresses are added after."""
+        mine = self.tmp / 'elsewhere' / 'Lastbook-Small.zip'
+        mine.parent.mkdir()
+        mine.write_bytes(self.zip)
+        self.files.data.pop('model.gguf')          # the model download is refused
+        chosen = self.tmp / 'chosen'
+        s = self.setup()
+        j = s.use(str(mine), folder=str(chosen))
+        self.assertIsNone(j.get('error'), j)
+        self.assertEqual(j['folder'], str(chosen / 'LastbookData'))
+        self.assertEqual([i['kind'] for i in j['items']], ['pack'])
+        self.assertEqual(self.wait(s)['state'], 'done')
     def test_restart_mid_download(self):
         """A child process downloads and is killed; a new Setup finds the job paused and resumes with Range."""
         self.files.pace = 0.01
@@ -1560,7 +1911,205 @@ class Jobs(Base):
                 'cert': str(self.tmp_class / 'cert.pem')}
 
 
+class StaleWorker(Base):
+    """A worker that outlives cancel() (which gives up joining) writes nothing: not into the cancelled job, not into the same job
+    revived by Retry or Resume, and no new job starts under it."""
+
+    def run_stuck(self, then):
+        s = self.setup()
+        entered, release = threading.Event(), threading.Event()
+        self.late = []          # (thread, what its late write raised) from the stuck worker
+
+        def stuck(self_, it, plan, work, control):
+            entered.set()
+            release.wait(10)
+            try:
+                self_._set(it, 'unpacking')
+                self_._fail(it, 'network', 'late failure')
+                self.late.append((threading.current_thread(), None))
+            except Exception as e:
+                self.late.append((threading.current_thread(), e))
+        with mock.patch.object(api.Setup, '_do_pack', stuck), mock.patch.object(api.Setup, '_join', lambda self_: self_.thread.join(0.2)):
+            s.start('small', False)
+            self.assertTrue(entered.wait(10))
+            first = s.thread
+            j = s.cancel()
+            then(s)
+            release.set()
+            first.join(10)
+            if s.thread is not first:
+                s.thread.join(10)
+        return s, j, first
+
+    def late_write(self, first):
+        return [e for t, e in self.late if t is first]
+
+    def test_late_worker_does_not_overwrite_a_cancelled_job(self):
+        s, j, first = self.run_stuck(lambda s: None)
+        self.assertEqual(j['error']['code'], 'cancelled')
+        self.assertNotIn('Nothing was changed', j['error']['message'])      # the worker was still running: that would not be true
+        self.assertIsInstance(self.late_write(first)[0], download.Stopped)
+        after = s.public_job()
+        self.assertEqual((after['state'], after['error']['code']), ('failed', 'cancelled'))
+        saved = json.loads(api._job_file(self.settings).read_text(encoding='utf-8'))
+        self.assertEqual(saved['error']['code'], 'cancelled')
+
+    def test_retry_is_refused_while_the_cancelled_worker_is_still_running(self):
+        out = []
+        s, j, first = self.run_stuck(lambda s: out.append(s.retry()))
+        self.assertEqual(out[0].get('code'), 'busy')
+        self.assertIn('still stopping', out[0]['error'])
+        self.assertIs(s.thread, first)                                          # no second worker in the same work folder
+        self.assertIsInstance(self.late_write(first)[0], download.Stopped)
+        self.assertEqual(s.public_job()['error']['code'], 'cancelled')
+        self.assertEqual(s.retry()['state'], 'waiting')                         # once it has stopped, Retry runs again
+        self.assertEqual(self.wait(s)['state'], 'done')
+
+    def test_resume_is_refused_while_the_cancelled_worker_is_still_running(self):
+        out = []
+
+        def then(s):
+            s.job['state'], s.job['error'] = 'paused', None
+            out.append(s.resume())
+        s, j, first = self.run_stuck(then)
+        self.assertEqual(out[0].get('code'), 'busy')
+        self.assertIs(s.thread, first)
+        self.assertIsInstance(self.late_write(first)[0], download.Stopped)
+        self.assertEqual(s.public_job()['state'], 'paused')                     # left for the person to resume once it has stopped
+
+    def test_resume_or_retry_from_a_stale_window_gets_the_running_job(self):
+        """Codex on #463: another window already restarted the job, so this window's Resume or Retry (from its cached paused or
+        failed screen) gets the running job back to show, not "still stopping"; nothing else starts."""
+        entered, release, real = threading.Event(), threading.Event(), Path.mkdir
+
+        def mkdir(p, *a, **kw):
+            if p.name == 'library-data' and 'unpack' in p.parts and not entered.is_set():
+                entered.set()
+                release.wait(10)
+            return real(p, *a, **kw)
+        s = self.setup()
+        with mock.patch.object(Path, 'mkdir', mkdir):
+            s.start('small', False)
+            self.assertTrue(entered.wait(10))
+            first = s.thread
+            for act in (s.resume, s.retry):
+                j = act()
+                self.assertNotIn('code', j)
+                self.assertIn(j['state'], api.ACTIVE)
+                self.assertIs(s.thread, first)                          # no second worker
+            release.set()
+        self.assertEqual(self.wait(s)['state'], 'done')
+
+    def test_new_job_is_refused_while_the_cancelled_worker_is_still_running(self):
+        out = []
+        s, j, first = self.run_stuck(lambda s: out.append(s.start('small', False)))
+        self.assertEqual(out[0].get('code'), 'busy')
+        self.assertIn('still stopping', out[0]['error'])
+        self.assertIs(s.thread, first)
+        self.assertEqual(s.public_job()['error']['code'], 'cancelled')
+
+    def test_copy_is_refused_while_the_cancelled_worker_is_still_running(self):
+        out = []
+        s, j, first = self.run_stuck(lambda s: out.append(s.start(copy_to=str(self.tmp / 'usb'))))
+        self.assertEqual(out[0].get('code'), 'busy')
+        self.assertIn('still stopping', out[0]['error'])
+        self.assertIs(s.thread, first)
+
+    def test_late_worker_does_not_install_a_cancelled_model(self):
+        """Review of #463: a model copied from another disk is still copying when cancel() gives up the join; once the copy ends
+        it does not go into the open library, and the AI is not told about it."""
+        cur = self.parent / 'LastbookData'
+        (cur / 'library-data').mkdir(parents=True)
+        (cur / 'library-data' / 'catalog.json').write_text('{}')
+        (cur / 'pack.json').write_text('{"name": "small"}')
+        mine = self.tmp / 'usb' / 'model.gguf'
+        mine.parent.mkdir()
+        mine.write_bytes(self.model)
+        s = self.setup('manage', current=cur)
+        entered, release, real = threading.Event(), threading.Event(), shutil.copyfile
+
+        def slow_copy(a, b, **kw):
+            entered.set()
+            release.wait(10)
+            return real(a, b, **kw)
+        with mock.patch.object(api, '_same_disk', lambda a, b: False), mock.patch.object(api.shutil, 'copyfile', slow_copy), \
+                mock.patch.object(api.Setup, '_join', lambda self_: self_.thread.join(0.2)):
+            self.assertEqual(s.use(str(mine))['items'][0]['kind'], 'model')
+            self.assertTrue(entered.wait(10))
+            first = s.thread
+            self.assertNotIn('Nothing was changed', s.cancel()['error']['message'])
+            self.assertEqual(s.remove_ai().get('code'), 'busy')       # nor is the AI removed under it
+            release.set()
+            first.join(10)
+        self.assertFalse((cur / 'models' / 'model.gguf').exists())
+        self.assertEqual(list((cur / 'models').glob('*.partial')), [])
+        self.assertEqual(self.marked, [])
+        self.assertEqual(s.public_job()['error']['code'], 'cancelled')
+
+    def test_late_progress_does_not_bring_a_cancelled_item_back(self):
+        """Review of #463: a progress report from the late worker leaves the cancelled item as it is."""
+        s, j, first = self.run_stuck(lambda s: None)
+        it = s.job['items'][0]
+        stale = []
+        t = threading.Thread(target=lambda: (setattr(s._worker, 'job', s.job), setattr(s._worker, 'run', s._run_id - 1),
+                                             s._track(it).progress(10, 100, 'unpacking'), stale.append(it['state'])))
+        t.start(); t.join(10)
+        self.assertEqual(stale, ['failed'])
+
+    def test_a_timed_out_cancel_is_finished_when_the_worker_ends(self):
+        """wonderdawg on #463: a real unpack held just before it makes a member's folder outlives the join; Cancel clears the
+        staging folder, the worker then writes a .partial there. Retry waits while it is alive, and the partial is gone once it ends."""
+        entered, release, real = threading.Event(), threading.Event(), Path.mkdir
+
+        def mkdir(p, *a, **kw):
+            if p.name == 'library-data' and 'unpack' in p.parts and not entered.is_set():
+                entered.set()
+                release.wait(10)
+            return real(p, *a, **kw)
+        s, seen = self.setup(), []
+
+        def join(self_):      # what another window asks for while cancel() waits on the worker
+            seen.append(self_.public_job().get('stopping'))
+            self_.thread.join(0.2)
+        with mock.patch.object(Path, 'mkdir', mkdir), mock.patch.object(api.Setup, '_join', join):
+            s.start('small', False)
+            self.assertTrue(entered.wait(10))
+            first = s.thread
+            j = s.cancel()
+            self.assertEqual(seen, [True])                           # stopping from the click, not only once cancel() returns
+            self.assertIn('finishing', j['error']['message'])
+            self.assertTrue(j.get('stopping'))                       # Setup keeps "Finishing cancellation…" up while it is blocked
+            self.assertTrue(s.state()['job'].get('stopping'))
+            self.assertEqual(s.retry().get('code'), 'busy')
+            release.set()
+            first.join(10)
+        unpack = self.parent / 'LastbookData.setup' / 'unpack'
+        self.assertEqual(sorted(str(p) for p in unpack.rglob('*.partial')) if unpack.exists() else [], [])
+        after = s.public_job()
+        self.assertEqual((after['state'], after['error']['code']), ('failed', 'cancelled'))
+        self.assertIn('Nothing was changed', after['error']['message'])
+        self.assertNotIn('stopping', after)                         # and lets it go once the cleanup is done
+        saved = json.loads(api._job_file(self.settings).read_text(encoding='utf-8'))
+        self.assertIn('Nothing was changed', saved['error']['message'])
+        self.assertEqual(s.retry()['state'], 'waiting')          # and Retry runs again
+        self.assertEqual(self.wait(s)['state'], 'done')
+
+    def test_cancel_with_nothing_running_says_nothing_changed(self):
+        self.files.data.pop('Lastbook-Small.zip')
+        s = self.setup()
+        with fast_backoff():
+            s.start('small', False)
+            self.wait(s)
+        self.assertIn('Nothing was changed', s.cancel()['error']['message'])
+
+
 class Switching(Base):
+    def setUp(self):
+        super().setUp()
+        p = mock.patch.object(install, 'RENAME_WAITS', (0,))       # a rename refused for good is not waited on here
+        p.start()
+        self.addCleanup(p.stop)
+
     def lib(self, where, marker):
         (where / 'library-data').mkdir(parents=True)
         (where / 'library-data' / 'catalog.json').write_text(marker)
@@ -1611,6 +2160,12 @@ class Switching(Base):
         api._job_file(self.settings).write_text(json.dumps({'state': 'done'}))
         return cur, work, staged
 
+    def recovered(self, work):
+        """Recovery is complete: no pending switch is left, and none of the person's files is left in the work folder
+        (main keeps what was unpacked for a failed switch as kept-<time>, which then holds only the pack's own files)."""
+        self.assertFalse(api._pending_file(self.settings).exists())
+        self.assertEqual([p for p in work.rglob('*') if p.suffix in ('.gguf', '.sqlite')], [])
+
     def test_missing_new_library_at_restart_restores_the_old_one(self):
         cur, _, _ = self.interrupted_switch()
         lib, note = api.startup(self.settings)
@@ -1629,7 +2184,7 @@ class Switching(Base):
         self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'old')
         for rel, content in assets.items():
             self.assertEqual((cur / rel).read_bytes(), content)
-        self.assertFalse(work.exists())
+        self.recovered(work)
 
     def test_incomplete_recovery_keeps_stage_until_next_restart(self):
         model = 'models/model.gguf'
@@ -1653,7 +2208,7 @@ class Switching(Base):
         self.assertEqual(lib, cur)
         api.opened(self.settings, lib, note)
         self.assertEqual((cur / index).read_bytes(), b'address index')
-        self.assertFalse(work.exists())
+        self.recovered(work)
 
     def test_recovery_preserves_both_files_on_a_name_conflict(self):
         model = Path('models/model.gguf')
@@ -1784,6 +2339,384 @@ class Switching(Base):
         self.assertEqual((aside[0] / 'library-data' / 'catalog.json').read_text(), 'old')
         self.assertEqual((new / 'models' / 'model.gguf').read_bytes(), b'model')
 
+    def with_files(self):
+        shutil.rmtree(self.parent, ignore_errors=True)
+        cur = self.lib(self.parent / 'LastbookData', 'old')
+        (cur / 'models').mkdir()
+        (cur / 'models' / 'model.gguf').write_bytes(self.model)
+        (cur / 'derived' / 'geo' / 'addresses').mkdir(parents=True)
+        (cur / 'derived' / 'geo' / 'addresses' / 'NJ.sqlite').write_bytes(b'addr')
+        return cur, self.lib(self.parent / 'LastbookData.setup' / 'unpack' / 'LastbookData', 'new')
+
+    def fail_replace(self, when):
+        real = os.replace
+
+        def flaky(a, b, *x, **k):
+            if when(Path(a), Path(b)):
+                raise OSError('busy')
+            return real(a, b, *x, **k)
+        return mock.patch.object(os, 'replace', flaky)
+
+    def stranded(self):
+        """A failed switch whose model was carried into the staged library and could not go back."""
+        cur, new = self.with_files()
+        (new / 'models').mkdir()
+        os.replace(cur / 'models' / 'model.gguf', new / 'models' / 'model.gguf')
+        return cur, new
+
+    def failed_switch_settings(self):
+        work = self.parent / 'LastbookData.setup'
+        self.settings.mkdir(parents=True, exist_ok=True)
+        (self.settings / 'setup.json').write_text(json.dumps({'work': str(work)}))
+        return work
+
+    def test_work_folder_is_kept_when_the_switch_failed(self):
+        cur, new = self.with_files()
+        work = self.failed_switch_settings()
+        (work / 'marker').write_text('x')
+        jf = api._job_file(self.settings)
+        jf.parent.mkdir(parents=True, exist_ok=True)
+        jf.write_text(json.dumps({'state': 'done'}))
+        api.opened(self.settings, cur, {'target': str(cur), 'old': None, 'error': 'It broke.'})
+        self.assertTrue((work / 'marker').exists())
+        self.assertFalse(jf.exists())
+
+    def test_a_failed_switch_sets_its_unpacked_library_aside(self):
+        cur, new = self.stranded()
+        work = self.failed_switch_settings()
+        note = {'target': str(cur), 'old': None, 'error': f'Could not move it. The file {new / "models" / "model.gguf"} is still there.'}
+        api.opened(self.settings, cur, note)
+        self.assertFalse((work / 'unpack').exists())       # the next job unpacks into a fresh folder, not over these files
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-')]
+        self.assertEqual(len(kept), 1)
+        self.assertEqual((kept[0] / 'LastbookData' / 'models' / 'model.gguf').read_bytes(), self.model)
+        self.assertIn(str(kept[0] / 'LastbookData' / 'models' / 'model.gguf'), note['error'])     # the message points at where the files are now
+
+    def test_a_model_a_failed_switch_left_survives_choosing_another_pack(self):
+        """#86 empties the unpack folder when another pack comes next. A model a failed switch left there must not go with it."""
+        cur, new = self.stranded()
+        work = self.failed_switch_settings()
+        api.opened(self.settings, cur, {'target': str(cur), 'old': None, 'error': 'Could not move it.'})
+        api._fresh_unpack(work / 'unpack', {'pack': 'another', 'revision': 1, 'files': []})
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-')]
+        self.assertEqual(len(kept), 1)
+        self.assertEqual((kept[0] / 'LastbookData' / 'models' / 'model.gguf').read_bytes(), self.model)
+
+    def test_a_model_survives_another_pack_when_the_unpack_folder_cannot_be_set_aside(self):
+        cur, new = self.stranded()
+        work = self.failed_switch_settings()
+        note = {'target': str(cur), 'old': None, 'error': 'Could not move it.'}
+        with self.fail_replace(lambda a, b: a == work / 'unpack'):     # a pack file still open on Windows, say
+            api.opened(self.settings, cur, note)
+        self.assertFalse((new / 'library-data' / 'catalog.json').exists())     # nothing a next unpack could take as already there
+        api._fresh_unpack(work / 'unpack', {'pack': 'another', 'revision': 1, 'files': []})
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-')]
+        self.assertEqual(len(kept), 1)
+        self.assertEqual((kept[0] / 'LastbookData' / 'models' / 'model.gguf').read_bytes(), self.model)
+        self.assertIn(str(kept[0]), note['error'])
+
+    def test_address_indexes_survive_when_the_unpack_folder_cannot_be_set_aside(self):
+        """Maintainer on #195: the fallback kept only models, and deleted address indexes the switch had carried."""
+        cur, new = self.with_files()
+        install.carry_over(cur, new)
+        work = self.failed_switch_settings()
+        note = {'target': str(cur), 'old': None, 'error': 'Could not move it.'}
+        with self.fail_replace(lambda a, b: a == work / 'unpack'):
+            api.opened(self.settings, cur, note)
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-')]
+        self.assertEqual(len(kept), 1)
+        self.assertEqual((kept[0] / 'LastbookData' / 'derived' / 'geo' / 'addresses' / 'NJ.sqlite').read_bytes(), b'addr')
+        self.assertEqual((kept[0] / 'LastbookData' / 'models' / 'model.gguf').read_bytes(), self.model)
+        self.assertIn(str(kept[0]), note['error'])
+
+    def test_a_model_that_cannot_be_set_aside_is_left_where_it_is(self):
+        """Maintainer on #195: when the model could not move either, it was deleted and the message still said it was kept."""
+        cur, new = self.with_files()
+        install.carry_over(cur, new)
+        work = self.failed_switch_settings()
+        note = {'target': str(cur), 'old': None, 'error': 'Could not move it.'}
+        with self.fail_replace(lambda a, b: a == work / 'unpack' or 'models' in a.parts):
+            api.opened(self.settings, cur, note)
+        self.assertEqual((new / 'models' / 'model.gguf').read_bytes(), self.model)     # the last copy stays
+        self.assertIn(str(new / 'models'), note['error'])                               # and the message says where it is
+        self.assertFalse((new / 'library-data' / 'catalog.json').exists())             # the pack's own files still go
+        for k in (p for p in work.iterdir() if p.name.startswith('kept-')):
+            self.assertFalse((k / 'LastbookData' / 'models').exists())                 # nothing claims it is somewhere else
+            self.assertEqual((k / 'LastbookData' / 'derived' / 'geo' / 'addresses' / 'NJ.sqlite').read_bytes(), b'addr')
+
+    def test_a_file_still_open_is_left_and_named_when_the_rest_is_dropped(self):
+        """Maintainer on #195: a regular file Windows still has open made the fallback's unlink raise. It stays and is named."""
+        cur, new = self.with_files()
+        install.carry_over(cur, new)
+        work = self.failed_switch_settings()
+        (new / 'pack.json').write_text('{}')
+        locked = {new / 'pack.json'}
+        real = os.unlink
+
+        def unlink(p, *a, **k):
+            if Path(p) in locked:
+                raise PermissionError(32, 'The process cannot access the file because it is being used by another process', str(p))
+            return real(p, *a, **k)
+        note = {'target': str(cur), 'old': None, 'error': 'Could not move it.'}
+        with self.fail_replace(lambda a, b: a == work / 'unpack' or 'models' in a.parts), mock.patch.object(os, 'unlink', unlink):
+            api.opened(self.settings, cur, note)       # does not raise
+        self.assertEqual((new / 'models' / 'model.gguf').read_bytes(), self.model)     # the person's files are kept
+        for p in locked:
+            self.assertTrue(p.exists())
+            self.assertIn(str(p), note['error'])        # and the message names what could not be removed
+
+    def test_a_model_left_in_the_unpack_folder_survives_another_pack(self):
+        """A model that could not be set aside stays in the unpack folder; the next pack's unpack must not empty it away."""
+        cur, new = self.with_files()
+        install.carry_over(cur, new)
+        work = self.failed_switch_settings()
+        note = {'target': str(cur), 'old': None, 'error': 'Could not move it.'}
+        with self.fail_replace(lambda a, b: a == work / 'unpack' or 'models' in a.parts):
+            api.opened(self.settings, cur, note)
+        api._fresh_unpack(work / 'unpack', {'pack': 'another', 'revision': 1, 'files': []})
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-') and (p / 'LastbookData' / 'models').exists()]
+        self.assertEqual(len(kept), 1)
+        self.assertEqual((kept[0] / 'LastbookData' / 'models' / 'model.gguf').read_bytes(), self.model)
+        self.assertEqual([p.name for p in (work / 'unpack').iterdir()], ['unpacked-from.json'])
+
+    def test_a_later_successful_setup_keeps_what_a_failed_switch_set_aside(self):
+        cur, new = self.stranded()
+        work = self.failed_switch_settings()
+        api.opened(self.settings, cur, {'target': str(cur), 'old': None, 'error': 'Could not move it.'})
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-')][0]
+        (work / 'downloads').mkdir()
+        (work / 'downloads' / 'pack.zip').write_text('zip')     # what the next job made
+        api.opened(self.settings, cur, {'target': str(cur), 'old': None})
+        self.assertTrue((kept / 'LastbookData' / 'models' / 'model.gguf').is_file())   # the message said it was kept there
+        self.assertFalse((work / 'downloads').exists())
+
+    def kept_after_failed_switch(self):
+        cur, new = self.stranded()
+        work = self.failed_switch_settings()
+        api.opened(self.settings, cur, {'target': str(cur), 'old': None, 'error': 'Could not move it.'})
+        (cur / 'pack.json').write_text('{"name": "old"}')       # so the Small library is downloaded next
+        return cur, [p for p in work.iterdir() if p.name.startswith('kept-')][0] / 'LastbookData' / 'models' / 'model.gguf'
+
+    def test_kept_files_survive_another_job_cancelled_part_way(self):
+        """wonderdawg on #195: a job started and cancelled while a failed switch's files are kept leaves them."""
+        cur, kept = self.kept_after_failed_switch()
+        hold = self.files.hold['Lastbook-Small.zip'] = Hold(10)
+        s = self.setup('manage', current=cur)
+        s.start('small', False)
+        self.assertTrue(hold.reached.wait(10))
+        self.assertEqual(s.cancel()['error']['code'], 'cancelled')
+        hold.release.set()
+        self.assertEqual(kept.read_bytes(), self.model)
+
+    def test_kept_files_survive_another_job_and_its_switch(self):
+        """...and so does one that finishes, through its switch at the next start and the clean-up after it."""
+        cur, kept = self.kept_after_failed_switch()
+        s = self.setup('manage', current=cur)
+        s.start('small', False)
+        self.assertEqual(self.wait(s)['state'], 'done')
+        self.assertEqual(kept.read_bytes(), self.model)
+        lib, note = api.startup(self.settings)
+        self.assertNotIn('error', note)
+        api.opened(self.settings, lib, note)
+        self.assertEqual(kept.read_bytes(), self.model)
+
+    def test_switch_that_stopped_after_the_old_library_moved_aside_is_finished_at_next_start(self):
+        cur, new = self.with_files()
+        pend = api._pending_file(self.settings)
+        d = install.stage_switch(pend, new, cur)
+        old = install.old_name(cur)
+        d['old'] = str(old)
+        install._write_json(pend, d)                       # what was written before the rename
+        install.carry_over(cur, new)
+        os.replace(cur, old)                               # ...and the process stopped here, before the new library went in
+        (self.settings / 'setup.json').write_text(json.dumps({'work': str(self.parent / 'LastbookData.setup')}))
+        lib, note = api.startup(self.settings)
+        self.assertEqual(lib, cur)
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'new')
+        self.assertTrue((cur / 'models' / 'model.gguf').is_file())
+        self.assertTrue((cur / 'derived' / 'geo' / 'addresses' / 'NJ.sqlite').is_file())
+        self.assertEqual(note['old'], str(old))
+        self.assertTrue(old.is_dir())
+
+    def stopped_after_the_old_library_moved_aside(self):
+        cur, new = self.with_files()
+        pend = api._pending_file(self.settings)
+        d = install.stage_switch(pend, new, cur)
+        old = install.old_name(cur)
+        d['old'] = str(old)
+        install._write_json(pend, d)                       # what was written before the renames
+        install.carry_over(cur, new)
+        os.replace(cur, old)
+        self.failed_switch_settings()
+        return cur, new, pend, old
+
+    def test_switch_that_stopped_after_the_new_library_went_in_is_kept_at_next_start(self):
+        """Review of #195 with #313: both renames were made, but the process stopped before the record said 'switched'. The
+        next start keeps the switch and the recorded old library: no new name for it, and no retries of a switch already made."""
+        cur, new, pend, old = self.stopped_after_the_old_library_moved_aside()
+        os.replace(new, cur)                               # ...and the process stopped here, before the record was written
+        lib, note = api.startup(self.settings)
+        self.assertEqual(lib, cur)
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'new')
+        self.assertTrue((cur / 'models' / 'model.gguf').is_file())
+        self.assertNotIn('error', note)
+        self.assertNotIn('again', note)
+        self.assertEqual(note['old'], str(old))
+        saved = json.loads(pend.read_text())
+        self.assertTrue(saved['switched'])
+        self.assertEqual(saved['old'], str(old))           # the recorded old library, not a fresh name
+        self.assertNotIn('attempts', saved)
+        api.opened(self.settings, lib, note)
+        self.assertFalse(pend.exists())
+        self.assertEqual(json.loads((self.settings / 'setup.json').read_text())['old'], [str(old)])
+        self.assertEqual((old / 'library-data' / 'catalog.json').read_text(), 'old')
+        self.assertEqual([p for p in self.parent.iterdir() if p.name.startswith('LastbookData.old-')], [old])
+
+    def test_a_missing_staged_library_without_its_recorded_old_one_is_not_taken_as_switched(self):
+        """The staged library being gone is not enough: with no recorded old library on disk, nothing says the switch was made."""
+        cur, new = self.with_files()
+        pend = api._pending_file(self.settings)
+        d = install.stage_switch(pend, new, cur)
+        d['old'] = str(install.old_name(cur))              # recorded, but never moved there
+        install._write_json(pend, d)
+        shutil.rmtree(new)
+        self.failed_switch_settings()
+        lib, note = api.startup(self.settings)
+        self.assertEqual((lib / 'library-data' / 'catalog.json').read_text(), 'old')
+        self.assertIn('error', note)
+        self.assertIsNone(note['old'])
+        self.assertNotIn('switched', json.loads(pend.read_text()))
+
+    def test_old_library_that_cannot_be_put_back_for_a_moment_is_put_back_at_the_next_start(self):
+        """Stopped with the old library aside, and the rename putting it back refused once: the record stays, and the next start
+        puts it back and makes the switch."""
+        cur, new, pend, old = self.stopped_after_the_old_library_moved_aside()
+        with self.fail_replace(lambda a, b: a == old and b == cur):
+            lib, note = api.startup(self.settings)
+        self.assertIsNone(lib)
+        self.assertIn(str(old), note['error'])
+        self.assertFalse(cur.exists())
+        self.assertEqual((old / 'library-data' / 'catalog.json').read_text(), 'old')
+        self.assertTrue((old / 'models' / 'model.gguf').is_file())     # carried back before the rename that failed
+        self.assertEqual(json.loads(pend.read_text())['old'], str(old))
+        lib, note = api.startup(self.settings)
+        self.assertEqual(lib, cur)
+        self.assertNotIn('error', note)
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'new')
+        self.assertTrue((cur / 'models' / 'model.gguf').is_file())
+        self.assertTrue((cur / 'derived' / 'geo' / 'addresses' / 'NJ.sqlite').is_file())
+        self.assertEqual(note['old'], str(old))
+        self.assertEqual((old / 'library-data' / 'catalog.json').read_text(), 'old')
+
+    def test_refused_switch_with_a_typographic_path_on_an_ascii_console_is_kept_for_the_next_start(self):
+        """#313 with the say() fix: a refusal naming a file under a folder called with ’ is printed on a console that takes
+        only ASCII without raising, so the attempt is still recorded and the switch kept for the next start."""
+        self.parent = self.tmp / 'Person’s place'
+        cur, new = self.with_files()
+        pend = api._pending_file(self.settings)
+        install.stage_switch(pend, new, cur)
+        self.failed_switch_settings()
+        staged_model = new / 'models' / 'model.gguf'
+        real = os.replace
+
+        def replace(a, b):
+            a = Path(a)
+            if a == cur or a == staged_model:     # the library is in use, and so is the model once it has been carried in
+                raise PermissionError(13, 'in use')
+            return real(a, b)
+        console = io.TextIOWrapper(io.BytesIO(), encoding='ascii', errors='strict')
+        with mock.patch.object(install.os, 'replace', replace), mock.patch.object(sys, 'stdout', console):
+            lib, note = api.startup(self.settings)
+            console.flush()
+            printed = console.buffer.getvalue().decode('ascii')
+        self.assertEqual(lib, cur)
+        self.assertTrue(note.get('again'))
+        self.assertIn(str(staged_model), note['error'])                 # the person's message keeps the real path
+        self.assertIn('setup: switch failed:', printed)
+        self.assertIn('Person?s place', printed)
+        saved = json.loads(pend.read_text())
+        self.assertEqual(saved['attempts'], 1)
+        self.assertEqual(staged_model.read_bytes(), self.model)
+
+    def test_a_work_folder_that_is_a_link_is_not_followed(self):
+        """Codex on #195: cleaning a work folder that links to the library must not empty the library."""
+        cur, new = self.with_files()
+        shutil.rmtree(self.parent / 'LastbookData.setup')
+        work = self.parent / 'LastbookData.setup'
+        work.symlink_to(cur, target_is_directory=True)
+        self.failed_switch_settings()
+        jf = api._job_file(self.settings)
+        jf.parent.mkdir(parents=True, exist_ok=True)
+        jf.write_text(json.dumps({'state': 'done'}))
+        api.opened(self.settings, cur, None)
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'old')
+        self.assertEqual((cur / 'models' / 'model.gguf').read_bytes(), self.model)
+
+    def test_a_stopped_first_install_into_an_empty_folder_keeps_the_new_model(self):
+        """Codex on #195: the folder set aside was empty, not a library: nothing was carried, so nothing goes back into it."""
+        shutil.rmtree(self.parent, ignore_errors=True)
+        cur = self.parent / 'LastbookData'
+        cur.mkdir(parents=True)
+        new = self.lib(self.parent / 'LastbookData.setup' / 'unpack' / 'LastbookData', 'new')
+        (new / 'models').mkdir()
+        (new / 'models' / 'model.gguf').write_bytes(self.model)
+        pend = api._pending_file(self.settings)
+        d = install.stage_switch(pend, new, cur)
+        old = install.old_name(cur)
+        d['old'] = str(old)
+        install._write_json(pend, d)
+        os.replace(cur, old)                               # ...and the process stopped here
+        (self.settings / 'setup.json').write_text(json.dumps({'work': str(self.parent / 'LastbookData.setup')}))
+        lib, note = api.startup(self.settings)
+        self.assertEqual(lib, cur)
+        self.assertEqual((cur / 'models' / 'model.gguf').read_bytes(), self.model)
+
+    @unittest.skipUnless(hasattr(install, 'SWITCH_ATTEMPTS'),
+                         'needs #313 applied first: a refused switch is retried at the next starts')
+    def test_two_refused_starts_keep_the_upgrade_and_the_third_sets_it_aside(self):
+        """wonderdawg on #195: apply #313, then this. The first two refused starts leave unpack/ and pending.json,
+        so the upgrade can be tried again. The third sets those files aside in work/kept-<time>/, the model included,
+        and the error names that folder."""
+        cur, new = self.with_files()
+        pend = api._pending_file(self.settings)
+        install.stage_switch(pend, new, cur)
+        work = self.failed_switch_settings()
+        staged_model = new / 'models' / 'model.gguf'
+        real = os.replace
+
+        def replace(a, b):
+            a = Path(a)
+            if a == cur or a == staged_model:     # the library is in use, and so is the model once it has been carried in
+                raise PermissionError(13, 'The process cannot access the file because it is being used by another process')
+            return real(a, b)
+
+        with mock.patch.object(install, 'RENAME_WAITS', (0,), create=True), mock.patch.object(install.os, 'replace', replace):
+            for attempt in (1, 2):
+                lib, note = api.startup(self.settings)
+                self.assertEqual((lib / 'library-data' / 'catalog.json').read_text(), 'old')
+                self.assertTrue(note.get('again'))
+                self.assertNotIn('kept-', note['error'])
+                api.opened(self.settings, lib, note)
+                self.assertTrue((work / 'unpack').is_dir())                 # still the staged upgrade, ready to retry
+                self.assertTrue(pend.is_file())
+                saved = json.loads(pend.read_text())
+                self.assertEqual(saved['attempts'], attempt)
+                self.assertEqual(saved['new'], str(new))
+                self.assertEqual(staged_model.read_bytes(), self.model)     # carried in, and not put back
+                self.assertFalse((cur / 'models' / 'model.gguf').exists())
+                self.assertFalse(any(p.name.startswith('kept-') for p in work.iterdir()))
+            lib, note = api.startup(self.settings)
+            self.assertFalse(note.get('again'))
+            self.assertFalse(pend.exists())                                 # given up: the record goes
+            self.assertEqual(staged_model.read_bytes(), self.model)         # the files are still in unpack until opened()
+            api.opened(self.settings, lib, note)
+        kept = [p for p in work.iterdir() if p.name.startswith('kept-')]
+        self.assertEqual(len(kept), 1)
+        self.assertFalse((work / 'unpack').exists())
+        self.assertEqual((kept[0] / 'LastbookData' / 'models' / 'model.gguf').read_bytes(), self.model)
+        self.assertIn(str(kept[0]), note['error'])                          # the person is told where the files are
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'old')
+
     def test_ai_only_in_manage_mode(self):
         cur = self.lib(self.parent / 'LastbookData', '{}')
         (cur / 'pack.json').write_text('{"name": "small"}')
@@ -1793,6 +2726,169 @@ class Switching(Base):
         self.assertEqual(self.wait(s)['state'], 'done')
         self.assertEqual(self.marked, [(str(cur / 'models' / 'model.gguf'), sha(self.model))])
         self.assertEqual(s.start('small', True)['code'], 'nothing')
+
+    def in_use(self, src, times):
+        """os.replace refusing to move `src` the first `times` tries, as Windows does while the old app still has files open."""
+        real, left = os.replace, [times]
+
+        def replace(a, b):
+            if Path(a) == src and left[0]:
+                left[0] -= 1
+                raise PermissionError(13, 'The process cannot access the file because it is being used by another process')
+            return real(a, b)
+        return mock.patch.object(install.os, 'replace', replace)
+
+    def test_rename_refused_for_a_moment_is_retried(self):
+        """#311: the old app may still be closing; a rename it holds up goes through a moment later."""
+        cur = self.lib(self.parent / 'LastbookData', 'old')
+        new = self.lib(self.parent / 'LastbookData.setup' / 'unpack' / 'LastbookData', 'new')
+        with mock.patch.object(install, 'RENAME_WAITS', (0, 0, 0)), self.in_use(cur, 2):
+            old = install.switch(new, cur)
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'new')
+        self.assertEqual((old / 'library-data' / 'catalog.json').read_text(), 'old')
+
+    def staged(self):
+        cur = self.lib(self.parent / 'LastbookData', 'old')
+        work = self.parent / 'LastbookData.setup'
+        new = self.lib(work / 'unpack' / 'LastbookData', 'new')
+        install.stage_switch(api._pending_file(self.settings), new, cur)
+        (self.settings / 'setup.json').write_text(json.dumps({'work': str(work)}))
+        api._job_file(self.settings).write_text(json.dumps({'state': 'done'}))
+        return cur, new
+
+    def test_refused_switch_is_kept_for_the_next_start(self):
+        """#311: a switch refused at the restart is tried again at the next start, and its unpack is kept for it."""
+        cur, new = self.staged()
+        with self.in_use(cur, 99):
+            lib, note = api.startup(self.settings)
+        self.assertEqual((lib / 'library-data' / 'catalog.json').read_text(), 'old')
+        self.assertIn('error', note)
+        self.assertEqual(json.loads(api._pending_file(self.settings).read_text())['attempts'], 1)
+        api.opened(self.settings, lib, note)
+        self.assertTrue(install.is_library(new))
+        self.assertTrue(api._pending_file(self.settings).is_file())
+        lib, note = api.startup(self.settings)         # the next start: nothing holds the library now
+        self.assertEqual((lib / 'library-data' / 'catalog.json').read_text(), 'new')
+        self.assertNotIn('error', note)
+        api.opened(self.settings, lib, note)
+        self.assertFalse(api._pending_file(self.settings).exists())
+        self.assertFalse(new.exists())
+
+    def test_refused_switch_leaves_setup_to_manage_the_old_library(self):
+        """A switch kept for the next start does not leave the finished job behind: setup opens on the library in use, not on
+        'Installed', while the unpack and the pending switch stay for the retry."""
+        cur, new = self.staged()
+        with self.in_use(cur, 99):
+            lib, note = api.startup(self.settings)
+        api.opened(self.settings, lib, note)
+        self.assertFalse(api._job_file(self.settings).exists())
+        self.assertTrue(install.is_library(new))
+        self.assertTrue(api._pending_file(self.settings).is_file())
+
+    def job_after(self, deferred, installed='small', ai=True):
+        cur, new = self.staged()
+        (cur / 'pack.json').write_text(json.dumps({'name': installed}))
+        if deferred:
+            with self.in_use(cur, 99):
+                lib, note = api.startup(self.settings)
+            api.opened(self.settings, lib, note)
+        s = self.setup('manage', current=cur)
+        s.start('small', ai)            # with 'small' installed: only the AI; otherwise the Small library is downloaded
+        self.assertEqual(self.wait(s)['state'], 'done')
+        return cur, new, s
+
+    def test_an_ai_job_keeps_a_deferred_switch_through_the_next_start(self):
+        """Adding the AI while a refused switch waits leaves the switch and its unpack: the next start makes it, AI and all."""
+        cur, new, s = self.job_after(deferred=True)
+        self.assertTrue(api._pending_file(self.settings).is_file())
+        self.assertTrue(install.is_library(new))
+        lib, note = api.startup(self.settings)
+        self.assertNotIn('error', note)
+        self.assertEqual((lib / 'library-data' / 'catalog.json').read_text(), 'new')
+        self.assertTrue((lib / 'models' / 'model.gguf').is_file())
+        api.opened(self.settings, lib, note)
+        self.assertFalse(api._pending_file(self.settings).exists())
+
+    def test_a_library_download_drops_a_deferred_switch(self):
+        """A library download rewrites the unpack the refused switch would use: that switch goes, and the new one is staged."""
+        cur, new, s = self.job_after(deferred=True, installed='old', ai=False)
+        self.assertNotIn('attempts', json.loads(api._pending_file(self.settings).read_text()))
+
+    def test_a_new_job_leaves_a_switch_staged_as_usual(self):
+        """A switch staged as usual (not yet tried) is left to the restart."""
+        self.job_after(deferred=False)
+        self.assertTrue(api._pending_file(self.settings).exists())
+
+    def test_cancelling_an_ai_job_keeps_a_deferred_switch_through_the_next_start(self):
+        """wonderdawg on #313: cancelling a job that adds only the AI leaves the refused switch and its unpack for the next start."""
+        cur, new = self.staged()
+        (cur / 'pack.json').write_text('{"name": "small"}')
+        with self.in_use(cur, 99):
+            lib, note = api.startup(self.settings)
+        api.opened(self.settings, lib, note)
+        hold = self.files.hold['model.gguf'] = Hold(10)
+        s = self.setup('manage', current=cur)
+        s.start('small', True)
+        self.assertTrue(hold.reached.wait(10))
+        self.assertEqual(s.cancel()['error']['code'], 'cancelled')
+        hold.release.set()
+        self.assertTrue(api._pending_file(self.settings).is_file())
+        self.assertTrue(install.is_library(new))
+        lib, note = api.startup(self.settings)
+        self.assertNotIn('error', note)
+        self.assertEqual((lib / 'library-data' / 'catalog.json').read_text(), 'new')
+
+    def deferred(self):
+        cur, new = self.staged()
+        with self.in_use(cur, 99):
+            lib, note = api.startup(self.settings)
+        api.opened(self.settings, lib, note)
+        return cur, new
+
+    def test_choosing_another_library_drops_a_deferred_switch(self):
+        """Codex on #313: choosing another installed library is not undone at the restart by the refused switch, and the
+        staged unpack nothing will use any more goes."""
+        cur, new = self.deferred()
+        other = self.lib(self.parent / 'Other' / 'LastbookData', 'other')
+        s = self.setup('manage', current=cur)
+        self.assertEqual(s.use(str(other))['state'], 'done')
+        self.assertFalse(api._pending_file(self.settings).exists())
+        self.assertFalse((self.parent / 'LastbookData.setup' / 'unpack').exists())
+        self.assertEqual(api.startup(self.settings), (None, None))
+
+    def test_choosing_the_switch_target_keeps_a_deferred_switch(self):
+        """With another library open, choosing the one the refused switch upgrades keeps the switch and its unpack."""
+        cur, new = self.deferred()
+        other = self.lib(self.parent / 'Other' / 'LastbookData', 'other')
+        s = self.setup('manage', current=other)
+        self.assertEqual(s.use(str(cur))['state'], 'done')
+        self.assertTrue(api._pending_file(self.settings).is_file())
+        self.assertTrue(install.is_library(new))
+
+    def test_retried_switch_carries_the_latest_ai_setting(self):
+        """The AI's on/off setting copied at a refused switch is copied again at the retry: what the person set since wins."""
+        cur, new = self.staged()
+        state = cur / 'derived' / 'llm' / 'state.json'
+        state.parent.mkdir(parents=True)
+        state.write_text('{"enabled": true}')
+        with self.in_use(cur, 99):
+            lib, note = api.startup(self.settings)
+        api.opened(self.settings, lib, note)
+        state.write_text('{"enabled": false}')         # changed in the old library, still the one in use
+        lib, note = api.startup(self.settings)
+        self.assertNotIn('error', note)
+        self.assertEqual((lib / 'derived' / 'llm' / 'state.json').read_text(), '{"enabled": false}')
+
+    def test_refused_switch_is_dropped_after_three_starts(self):
+        cur, new = self.staged()
+        for attempt in (1, 2, 3):
+            with self.in_use(cur, 99):
+                lib, note = api.startup(self.settings)
+            self.assertIn('error', note)
+            self.assertEqual(api._pending_file(self.settings).exists(), attempt < 3)
+            api.opened(self.settings, lib, note)
+        self.assertEqual((cur / 'library-data' / 'catalog.json').read_text(), 'old')
+        self.assertFalse(new.exists())          # given up: cleared as before
 
 
 class PackCompare(unittest.TestCase):
@@ -1938,9 +3034,40 @@ class PackPlan(unittest.TestCase):
                                  ['derived/geo/national.sqlite', 'derived/geo/places.sqlite', 'map-set.json'])
                 self.assertEqual(d['map'], 'RI')
 
+    def test_changed_pack_file_with_a_state_map_installed(self):
+        # An older pack with a state map installed on its own; the release changes one pack file and its base map.
+        # Only the changed pack file counts toward the fetch; the state map is kept, not fetched over.
+        self.own_map()
+        release = {**self.pack, 'library-data/a.pdf': b'A' * 120, 'derived/geo/national.sqlite': b'new base map' * 9}
+        d = install.plan_update(self.lib, self.rows(release))
+        self.assertEqual((d['changed'], d['added'], d['removed']), (['library-data/a.pdf'], [], []))
+        self.assertEqual(d['unchanged'], ['library-data/catalog.json', 'pack.json'])
+        self.assertEqual((d['fetch_bytes'], d['bytes']['changed']), (120, 120))
+        self.assertEqual(d['reuse_bytes'], len(self.pack['library-data/catalog.json']) + len(self.pack['pack.json']))
+        self.assertEqual(d['kept']['map'], [('derived/geo/national.sqlite', 270), ('derived/geo/places.sqlite', 40),
+                                            ('map-set.json', len((self.lib / 'map-set.json').read_bytes()))])
+        self.assertEqual(d['map'], 'RI')
+
     def test_without_its_own_map_the_packs_map_is_compared(self):
         d = install.plan_update(self.lib, self.rows({**self.pack, 'derived/geo/national.sqlite': b'new base map' * 9}))
         self.assertEqual((d['changed'], d['kept']['map']), (['derived/geo/national.sqlite'], []))
+
+    def test_pack_map_with_a_map_set_is_compared(self):
+        map_file = 'derived/geo/national.sqlite'
+        pack = {
+            **self.pack,
+            'pack.json': b'{"name": "small", "map": "us"}',
+            'map-set.json': json.dumps({'name': 'us', 'files': {map_file: len(self.pack[map_file])}}).encode(),
+        }
+        for rel in ('pack.json', 'map-set.json'):
+            self.put(rel, pack[rel])
+        self.put('pack-manifest.tsv', self.listing(pack).encode())
+        replacement = bytes(len(pack[map_file]))
+
+        d = install.plan_update(self.lib, self.rows({**pack, map_file: replacement}))
+        self.assertEqual(d['changed'], [map_file])
+        self.assertEqual(d['fetch_bytes'], len(replacement))
+        self.assertEqual(d['kept']['map'], [])
 
     def test_model_addresses_and_other_files_are_kept(self):
         self.put('models/model.gguf', b'm' * 50)
@@ -2030,6 +3157,83 @@ class Manage(Base):
         self.assertEqual(sha((new / 'models' / 'model.gguf').read_bytes()), sha(self.model))
         self.assertEqual(s._check_library({'state': '', 'bytes_done': 0}, new, Control()), [])
         self.assertTrue(Path(note['old']).exists())        # the damaged copy is kept aside until deleted
+
+    def test_check_now_downloads_nothing_and_keeps_the_result(self):
+        lib = self.installed_library()
+        work = self.parent / 'LastbookData.setup'
+        shutil.rmtree(work, ignore_errors=True)
+        s = self.setup('manage', current=lib)
+        self.assertIsNone(s.current_info()['checked'])                  # never checked on this computer
+        self.files.log.clear()
+        j = s.start(check=True)
+        self.assertTrue(j['check'])
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok'], j['result']['repaired']), (0, True, False))
+        self.assertEqual(self.files.log, [])                             # nothing asked of the server
+        self.assertFalse(work.exists())                                  # nothing written beside the library
+        self.assertEqual(s.current_info()['checked'], j['result'])
+        self.assertEqual(self.setup('manage', current=lib).current_info()['checked'], j['result'])   # kept in the settings folder
+        self.assertIsNone(api.startup(self.settings)[1])                 # no switch staged
+
+    def test_check_now_reports_damage_and_changes_nothing(self):
+        lib = self.installed_library()
+        damaged = []
+        for path in (lib / 'library-data' / 'big.bin', lib / 'models' / 'model.gguf'):
+            data = bytearray(path.read_bytes())
+            data[0] ^= 1
+            path.write_bytes(data)
+            damaged.append((path, sha(data)))
+        s = self.setup('manage', current=lib)
+        self.files.log.clear()
+        s.start(check=True)
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok'], j['result']['repaired']), (2, False, False))
+        self.assertEqual(self.files.log, [])                             # a check never downloads, even with damage found
+        for path, digest in damaged:
+            self.assertEqual(sha(path.read_bytes()), digest)             # and changes nothing: Repair is the person's choice
+        s.job = None
+        s.start(repair=True)                                             # then Repair fixes it, and the check it ran is kept
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok'], j['result']['repaired']), (2, False, True))
+        self.assertEqual(sorted(n for n, _, _ in self.files.log), ['Lastbook-Small.zip', 'model.gguf'])
+        self.assertEqual(s.current_info()['checked']['repaired'], True)
+
+    def test_check_now_finds_a_model_of_the_wrong_size(self):
+        lib = self.installed_library()
+        model = lib / 'models' / 'model.gguf'
+        model.write_bytes(self.model[:-1])                               # one byte short: current_info() no longer names a model
+        s = self.setup('manage', current=lib)
+        self.assertIsNone(s.current_info()['model'])
+        self.files.log.clear()
+        j = s.start(check=True)
+        self.assertEqual([i['kind'] for i in j['items']], ['pack', 'model'])
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertIs(j['result']['model_ok'], False)
+        self.assertGreaterEqual(j['result']['damaged'], 1)
+        self.assertEqual(self.files.log, [])
+        self.assertEqual(model.read_bytes(), self.model[:-1])           # the file is unchanged
+        s.job = None
+        s.start(repair=True)                                             # and Repair, as the check offers, replaces it
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok'], j['result']['repaired']), (1, False, True))
+        self.assertEqual(sorted(n for n, _, _ in self.files.log), ['model.gguf'])
+        self.assertEqual(model.read_bytes(), self.model)
+
+    def test_check_now_without_the_model_or_a_library(self):
+        lib = self.installed_library()
+        (lib / 'models' / 'model.gguf').unlink()
+        s = self.setup('manage', current=lib)
+        j = s.start(check=True, ai=True)                                 # the AI is not installed: it is not checked, or fetched
+        self.assertEqual([i['kind'] for i in j['items']], ['pack'])
+        j = self.wait(s)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok']), (0, None))
+        self.assertEqual(self.setup().start(check=True)['code'], 'nothing')
+        self.assertIn('check', self.setup().start(check=True)['error'])
 
     def drive(self):
         d = self.tmp / 'drive'
@@ -2330,6 +3534,48 @@ class Manage(Base):
             self.assertIn('copy again to the same place', j['error']['message'])
         self.assertTrue(api.install.is_library(lib))
 
+    def test_a_late_copy_partial_is_removed_when_the_worker_ends(self):
+        """wonderdawg on #463: the real Copy held just before it opens a file's .partial on the drive, Cancel returns, then the
+        worker goes on and makes that .partial. It is gone once the worker ends; the file copied before it stays."""
+        lib = self.installed_library()
+        entered, release, real, opened = threading.Event(), threading.Event(), api._open_new, []
+
+        def open_new(p):
+            if str(p).endswith('.partial') and COPY_DRIVE in Path(p).parts:
+                opened.append(Path(p))
+                if len(opened) == 2 and not entered.is_set():      # the first file is copied, the second is held
+                    entered.set()
+                    release.wait(10)
+            return real(p)
+        COPY_DRIVE = 'copy-drive'
+        drive = self.parent / COPY_DRIVE
+        drive.mkdir()
+        s, seen = self.setup('manage', current=lib), []
+
+        def join(self_):
+            seen.append(self_.public_job().get('stopping'))
+            self_.thread.join(0.2)
+        with mock.patch.object(api, '_open_new', open_new), mock.patch.object(api.Setup, '_join', join):
+            s.start(copy_to=str(drive))
+            self.assertTrue(entered.wait(10))
+            first = s.thread
+            j = s.cancel()
+            self.assertEqual(seen, [True])
+            self.assertTrue(j.get('stopping'))                       # Setup shows it is still stopping
+            self.assertEqual(s.retry().get('code'), 'busy')
+            release.set()
+            first.join(10)
+            self.assertFalse(first.is_alive())
+        out = drive / 'LastbookData'
+        self.assertEqual(sorted(str(p) for p in drive.rglob('*.partial')), [])      # the late partial went with the worker
+        done = opened[0].with_name(opened[0].name[:-len('.partial')])
+        rel = done.relative_to(out).as_posix()
+        self.assertEqual(done.read_bytes(), (lib / rel).read_bytes())             # what was already copied stays
+        after = s.public_job()
+        self.assertEqual((after['state'], after['error']['code']), ('failed', 'cancelled'))
+        self.assertNotIn('stopping', after)
+        self.assertTrue(api.install.is_library(lib))
+
     def test_copy_refuses_a_lastbookdata_that_is_a_file(self):
         """A plain file called LastbookData on the drive gets the usual folder refusal, not an internal error."""
         lib = self.installed_library()
@@ -2450,6 +3696,27 @@ console.log(JSON.stringify({copy: jobLead(j), download: jobLead(Object.assign({}
         self.assertIn('Stopped when Lastbook closed', out['download'])   # the same complete item in a download job: unchanged
 
     @unittest.skipUnless(shutil.which('node'), 'needs Node')
+    def test_copy_item_line_never_speaks_of_downloads(self):
+        """The line under a copy's bar, drawn by setup.js's own fillItem: paused at 100% it said "Stopped. Nothing to download.",
+        paused part way it lost "copied and checked", and waiting it said "to download"."""
+        script = r"""
+const src = require('fs').readFileSync(process.argv[1], 'utf8');
+const section = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)));
+const size = b => b + ' B', rate = () => '', eta = () => '', retryIn = () => '', line = {};
+const bar = {classList: {contains: () => false}, firstChild: {style: {}}, setAttribute() {}, removeAttribute() {}};
+const el = {querySelector: s => s.includes('bar') ? bar : line};
+let repair = null, S = {job: {copy: true}};
+const checkOnly = () => false, behind = () => false, afterAbove = () => false;
+eval(section('  const noDownload = ', '  const above = ') + section('  function fillItem(', '  function jobView(') + 'globalThis.fill = fillItem;');   // one eval: their scope
+const show = (state, done) => { fill(el, {kind: 'copy', state, bytes_done: done, bytes_total: 100, source: 'download'}); return line.textContent };
+console.log(JSON.stringify({waiting: show('waiting', 0), paused_0: show('paused', 0), paused_40: show('paused', 40), paused_100: show('paused', 100), copying: show('copying', 40)}));
+"""
+        r = subprocess.run([shutil.which('node'), '-e', script, str(ROOT / 'web' / 'setup.js')], check=True, capture_output=True, text=True, encoding='utf-8')
+        self.assertEqual(json.loads(r.stdout), {'waiting': '100 B to copy', 'paused_0': '0 B of 100 B copied and checked',
+                                                'paused_40': '40 B of 100 B copied and checked', 'paused_100': '100 B of 100 B copied and checked',
+                                                'copying': '40 B of 100 B copied and checked'})
+
+    @unittest.skipUnless(shutil.which('node'), 'needs Node')
     def test_copy_screen_words(self):
         """A copy's cancel and stops speak of the copy and the drive, never of a download or the internet."""
         script = r"""
@@ -2507,6 +3774,206 @@ console.log(JSON.stringify({copy: errorBox(job('copy')), full: errorBox(job('no_
         self.assertEqual(self.setup(pick_folder=lambda: None).pick(), {'path': None, 'cancelled': True})
         self.assertTrue(all('name' in d for d in hardware.detect([self.parent])['disks']))
 
+    def damaged_library(self):
+        """A library whose big.bin and model are each one bit off: (library, [(path, its damaged sha256)])."""
+        lib = self.installed_library()
+        damaged = []
+        for path in (lib / 'library-data' / 'big.bin', lib / 'models' / 'model.gguf'):
+            data = bytearray(path.read_bytes())
+            data[0] ^= 1
+            path.write_bytes(data)
+            damaged.append((path, sha(data)))
+        return lib, damaged
+
+    def resumed_check(self, lib, manifest=None):
+        """Lastbook reopened on a saved Check now: the job comes back paused, and Resume runs it to its end."""
+        kw = {'manifest': manifest} if manifest else {}
+        s = self.setup('manage', current=lib, **kw)
+        j = s.public_job()
+        self.assertEqual((j['state'], j.get('check')), ('paused', True), j)
+        self.assertTrue(all(i['state'] == 'paused' and i['bytes_done'] == 0 for i in j['items']), j)   # starts again from the files
+        self.files.log.clear()
+        s.resume()
+        return s, self.wait(s)
+
+    def assert_read_only(self, lib, damaged, j):
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual(self.files.log, [])                             # no request to any server
+        for path, digest in damaged:
+            self.assertEqual(sha(path.read_bytes()), digest)             # the damaged bytes left as they are
+        self.assertFalse(api._work_for(lib).exists())                    # no work or downloads folder
+        self.assertIsNone(api.startup(self.settings)[1])                 # nothing staged to switch to
+
+    def test_check_now_saved_before_it_starts_stays_read_only_after_a_restart(self):
+        """Saved before its worker started, then Lastbook reopened and Resume pressed: still a check. It used to forget it was one,
+        download model.gguf, replace the damaged file and report repaired=true."""
+        lib, damaged = self.damaged_library()
+        with mock.patch.object(api.Setup, '_run', lambda self_: None):    # the job is saved; the process ends before the worker runs
+            self.assertTrue(self.setup('manage', current=lib).start(check=True)['check'])
+        s, j = self.resumed_check(lib)
+        self.assert_read_only(lib, damaged, j)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok'], j['result']['repaired']), (2, False, False))
+        self.assertEqual(s.current_info()['checked']['damaged'], 2)
+
+    def test_check_now_saved_with_its_items_done_checks_again_after_a_restart(self):
+        """Saved after both items finished but before the result was written: the reopened check does not trust the saved
+        "done" (it used to report damaged=0 and model_ok=null with the damage still there). It reads the files again."""
+        lib, damaged = self.damaged_library()
+        with mock.patch.object(api.Setup, '_finish_job', lambda self_, plan, work: None):   # the process ends before the result
+            s = self.setup('manage', current=lib)
+            s.start(check=True)
+            t0 = time.time()
+            while not all(i['state'] == 'done' for i in s.public_job()['items']):
+                self.assertLess(time.time() - t0, 20)
+                time.sleep(0.02)
+            s.thread.join(10)
+        saved = json.loads(api._job_file(self.settings).read_text(encoding='utf-8'))
+        self.assertEqual([i['state'] for i in saved['items']], ['done', 'done'])
+        s, j = self.resumed_check(lib)
+        self.assert_read_only(lib, damaged, j)
+        self.assertEqual((j['result']['damaged'], j['result']['model_ok'], j['result']['repaired']), (2, False, False))
+
+    def test_check_now_keeps_an_earlier_jobs_downloads(self):
+        """A finished check is not an install: the next start does not clear the work folder, where a download that stopped
+        earlier can still be resumed from."""
+        lib = self.installed_library()
+        work = api._work_for(lib)
+        (work / 'downloads').mkdir(parents=True)
+        (work / 'downloads' / 'Lastbook-Small.zip.part').write_bytes(b'x' * 1000)
+        self.settings.mkdir(parents=True, exist_ok=True)
+        (self.settings / 'setup.json').write_text(json.dumps({'work': str(work)}))
+        s = self.setup('manage', current=lib)
+        s.start(check=True)
+        self.assertEqual(self.wait(s)['state'], 'done')
+        api.opened(self.settings, lib, None)                             # what main.py does on the next start
+        self.assertTrue((work / 'downloads' / 'Lastbook-Small.zip.part').is_file())
+        self.assertEqual(json.loads((self.settings / 'setup.json').read_text())['work'], str(work))
+
+    def test_repair_result_says_what_was_replaced(self):
+        """Repair's result tells a whole library downloaded again (the old one kept aside) from the AI file replaced in place."""
+        lib = self.installed_library()
+        model = lib / 'models' / 'model.gguf'
+        model.write_bytes(self.model[:-1])
+        s = self.setup('manage', current=lib)
+        s.start(repair=True)
+        r = self.wait(s)['result']
+        self.assertEqual((r['repaired'], r['model_ok'], r['pack_replaced']), (True, False, False))
+        big = lib / 'library-data' / 'big.bin'                          # then a library file: the whole pack again
+        data = bytearray(big.read_bytes())
+        data[0] ^= 1
+        big.write_bytes(data)
+        s = self.setup('manage', current=lib)
+        s.job = None
+        s.start(repair=True)
+        r = self.wait(s)['result']
+        self.assertEqual((r['repaired'], r['pack_replaced']), (True, True))
+
+    def test_cancelling_a_check_keeps_downloads_and_a_staged_update(self):
+        """Cancel used the install's path: it deleted the work folder's downloads and dropped a staged update. A check made neither."""
+        lib = self.installed_library()
+        part = api._work_for(lib) / 'downloads' / 'Lastbook-Medium.zip.part'
+        part.parent.mkdir(parents=True)
+        part.write_bytes(b'x' * 1000)
+        s = self.setup('manage', current=lib)
+        reading = threading.Event()
+
+        def held(self_, it, folder, control):
+            self_._set(it, 'verifying')
+            reading.set()
+            while True:
+                control.check()
+                time.sleep(0.02)
+        with mock.patch.object(api.Setup, '_check_library', held):
+            s.start(check=True)
+            self.assertTrue(reading.wait(20))
+            pending = api._pending_file(self.settings)
+            pending.parent.mkdir(parents=True, exist_ok=True)
+            pending.write_text('{}')
+            j = s.cancel()
+        self.assertEqual((j['state'], j['error']['code']), ('failed', 'cancelled'))
+        self.assertEqual(part.read_bytes(), b'x' * 1000)
+        self.assertEqual(pending.read_text(), '{}')
+
+    def test_cancelling_a_check_reopened_after_a_restart_keeps_downloads(self):
+        lib = self.installed_library()
+        part = api._work_for(lib) / 'downloads' / 'Lastbook-Medium.zip.part'
+        part.parent.mkdir(parents=True)
+        part.write_bytes(b'x' * 1000)
+        with mock.patch.object(api.Setup, '_run', lambda self_: None):
+            self.setup('manage', current=lib).start(check=True)
+        self.assertEqual(self.setup('manage', current=lib).cancel()['error']['code'], 'cancelled')
+        self.assertEqual(part.read_bytes(), b'x' * 1000)
+
+    def test_finish_refuses_a_check(self):
+        s = self.setup('manage', current=self.installed_library())
+        restarted = []
+        s.on_finish = restarted.append
+        s.start(check=True)
+        self.assertEqual(self.wait(s)['state'], 'done')
+        self.assertEqual(s.finish().get('code'), 'nothing')
+        time.sleep(0.6)
+        self.assertEqual(restarted, [])
+
+    def test_a_read_error_in_a_check_is_not_the_internet(self):
+        s = self.setup('manage', current=self.installed_library())
+        with mock.patch.object(api.Setup, '_check_library', side_effect=OSError(errno.EIO, 'Input/output error')):
+            s.start(check=True)
+            j = self.wait(s)
+        self.assertEqual((j['state'], j['error']['code']), ('failed', 'check'))
+        self.assertNotIn('internet', j['error']['message'])
+
+    @unittest.skipUnless(shutil.which('node'), 'needs Node')
+    def test_check_and_repair_words(self):
+        """setup.js's own words: a check, also one resumed after a restart (j.check, with no memory of having started it), never
+        speaks of downloads; Repair's offer and its result tell a whole-library download from an AI file put in place."""
+        script = r"""
+const src = require('fs').readFileSync(process.argv[1], 'utf8');
+const section = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)));
+const errCode = e => e && e.code, noDownload = () => false;
+let repair = null;
+const jobWords = j => { repair = j.repair && !j.check ? {fixed: false} : null; return {head: jobHead(j), lead: jobLead(j)} };
+eval(section('  function jobHead(', '  function jobView('));
+eval(section('  function jobLead(', '  /* Resume when paused'));
+eval(section('  function repairedWords(', '  /* ---- Check now'));
+eval(section('  function repairOffer(', '  function checkedView('));
+const esc = String, ico = () => '', itemTitle = it => it.title, WORD = {paused: 'Paused'};
+eval(section('  const STEPS = ', '  const WORD = ') + section('  function itemHTML(', '  const itemTitle = '));   // one eval: STEPS in itemHTML's scope
+const steps = (j, it) => [...itemHTML(it, j).matchAll(/<li[^>]*>([^<]*)<\/li>/g)].map(m => m[1]);
+const job = (state, extra) => Object.assign({state, items: [{state: state === 'paused' ? 'paused' : 'verifying'}], error: null}, extra);
+console.log(JSON.stringify({
+  checking: jobWords(job('verifying', {check: true, repair: true})),
+  paused: jobWords(job('paused', {check: true, repair: true})),
+  repairing: jobWords(job('verifying', {repair: true})),
+  install: jobWords(job('downloading', {})),
+  offer_ai: repairOffer(0, true, false), offer_lib: repairOffer(2, false, false), offer_all: repairOffer(1, true, true),
+  did_ai: repairedWords({repaired: true, model_ok: false, damaged: 1, pack_replaced: false}),
+  did_lib: repairedWords({repaired: true, model_ok: true, damaged: 1, pack_replaced: true}),
+  check_steps: steps({check: true, state: 'paused'}, {kind: 'pack', state: 'paused', bytes_done: 0, bytes_total: 10, title: 'Small'}),
+  install_steps: steps({state: 'paused'}, {kind: 'pack', state: 'paused', bytes_done: 0, bytes_total: 10, title: 'Small'}),
+}));
+"""
+        r = subprocess.run([shutil.which('node'), '-e', script, str(ROOT / 'web' / 'setup.js')],
+                           check=True, capture_output=True, text=True, encoding='utf-8')
+        w = json.loads(r.stdout)
+        self.assertEqual(w['checking']['head'], 'Checking the library')
+        self.assertIn('downloads nothing', w['checking']['lead'])
+        self.assertEqual(w['paused']['head'], 'Paused')
+        self.assertIn('Nothing was downloaded or changed', w['paused']['lead'])
+        self.assertNotIn('What is downloaded is kept', w['paused']['lead'])
+        self.assertEqual(w['repairing']['head'], 'Checking the library')
+        self.assertEqual(w['install']['head'], 'Installing')
+        self.assertEqual(w['offer_ai'], 'Repair downloads the local AI file again and puts it in place of this one.')
+        self.assertNotIn('aside', w['offer_ai'])                          # no damaged model is kept: it is replaced
+        self.assertIn('whole library again and keeps the damaged copy aside', w['offer_lib'])
+        self.assertEqual(w['offer_all'], 'Repair downloads the whole library again and keeps the damaged copy aside, downloads the local AI '
+                                          'file again and puts it in place of this one, and downloads the detailed map again.')
+        self.assertIn('put in its place', w['did_ai'])
+        self.assertNotIn('kept aside', w['did_ai'])
+        self.assertIn('downloaded again', w['did_lib'])
+        self.assertIn('kept aside', w['did_lib'])
+        self.assertEqual(w['check_steps'], ['Check'])                    # a check's items are only read: no Download or Unpack
+        self.assertEqual(w['install_steps'], ['Download', 'Check', 'Unpack', 'Finish'])
+
 
 def make_map(path, state='CA', extra=None):
     """A state map zip: only map-set files, under LastbookData/, with map-set.json listing them."""
@@ -2519,6 +3986,127 @@ def make_map(path, state='CA', extra=None):
         for k, v in files.items():
             z.writestr('LastbookData/' + k, v)
     return files
+
+
+class WithFlags:
+    """A stat result with st_flags, for a system whose own results have none. Everything else is the real result's."""
+
+    def __init__(self, st):
+        self._st, self.st_flags = st, 0
+
+    def __getattr__(self, name):
+        return getattr(self._st, name)
+
+
+class CloudOnly(Base):
+    """Files of the library whose contents are only in iCloud (#362): found from metadata alone, never opened."""
+
+    def setUp(self):
+        super().setUp()
+        # These tests tell the code it is on a Mac. Only macOS and the BSDs put st_flags on a stat result, so on Linux and
+        # Windows os.lstat is given the flags of an ordinary file here. On a Mac nothing is patched.
+        if not hasattr(os.lstat(self.tmp), 'st_flags'):
+            real = os.lstat
+            patch = mock.patch.object(hardware.os, 'lstat', lambda path, *a, **kw: WithFlags(real(path, *a, **kw)))
+            patch.start()
+            self.addCleanup(patch.stop)
+
+    def library(self):
+        lib = self.tmp / 'LastbookData'
+        for rel in ('library-data/catalog.json', 'videos/a.mp4', 'videos/b.mp4', 'zim/old/c.zim'):
+            (lib / rel).parent.mkdir(parents=True, exist_ok=True)
+            (lib / rel).write_bytes(b'x' * 10)
+        return lib
+
+    def placeholders(self, lib, *rels):
+        """os.lstat as macOS reports an evicted iCloud item: the SF_DATALESS flag (0x40000000), contents not on this computer."""
+        real = os.lstat
+        cloud = {str(lib / r) for r in rels}
+
+        def lstat(path, *a, **kw):
+            st = real(path, *a, **kw)
+            if str(path) not in cloud:
+                return st
+            return mock.Mock(st_flags=st.st_flags | 0x40000000, st_size=st.st_size, st_mode=st.st_mode)
+        return mock.patch.object(hardware.os, 'lstat', lstat)
+
+    def test_placeholder_found_ordinary_file_not(self):
+        lib = self.library()
+        with mock.patch.object(hardware.sys, 'platform', 'darwin'), self.placeholders(lib, 'videos/b.mp4'):
+            r = hardware.cloud_only(lib)
+        self.assertEqual(r, {'files': 1, 'folders': 0, 'bytes': 10, 'examples': ['videos/b.mp4']})
+
+    def test_nothing_in_the_cloud(self):
+        lib = self.library()
+        with mock.patch.object(hardware.sys, 'platform', 'darwin'):
+            self.assertEqual(hardware.cloud_only(lib), {'files': 0, 'folders': 0, 'bytes': 0, 'examples': []})
+
+    def test_folder_in_the_cloud_is_not_listed(self):
+        # Listing an evicted folder asks iCloud for its contents, which can hang offline: count it, do not open it.
+        lib = self.library()
+        with mock.patch.object(hardware.sys, 'platform', 'darwin'), self.placeholders(lib, 'zim/old', 'zim/old/c.zim'):
+            r = hardware.cloud_only(lib)
+        self.assertEqual((r['files'], r['folders'], r['examples']), (0, 1, ['zim/old/']))
+
+    def test_files_are_never_opened(self):
+        lib = self.library()
+        with mock.patch.object(hardware.sys, 'platform', 'darwin'), self.placeholders(lib, 'videos/a.mp4'), \
+                mock.patch('builtins.open', side_effect=AssertionError('opened a file')):
+            self.assertEqual(hardware.cloud_only(lib)['files'], 1)
+
+    def test_only_on_a_mac(self):
+        with mock.patch.object(hardware.sys, 'platform', 'win32'):
+            self.assertIsNone(hardware.cloud_only(self.library()))
+
+    def test_setup_reports_it_for_the_open_library(self):
+        lib = self.library()
+        s = self.setup('manage', current=lib)
+        with mock.patch.object(hardware.sys, 'platform', 'darwin'), self.placeholders(lib, 'videos/a.mp4', 'videos/b.mp4'):
+            s.current_info()                       # counting starts in the background, so the page is not held up
+            s.cloud_thread.join(10)
+            r = s.current_info()['cloud_only']
+        self.assertEqual((r['files'], r['examples']), (2, ['videos/a.mp4', 'videos/b.mp4']))
+
+    def info_on(self, system):
+        """current_info as the page gets it on this system, and whether a count was started."""
+        s = self.setup('manage', current=self.library())
+        with mock.patch.object(hardware.sys, 'platform', system):
+            info = s.current_info()
+        return info, s.cloud_thread
+
+    def test_other_systems_are_not_counting(self):
+        # #370 review: None alone also meant "still counting", so Windows and Linux were asked again up to CLOUD_POLLS times.
+        for system in ('win32', 'linux'):
+            with self.subTest(system=system):
+                info, thread = self.info_on(system)
+                self.assertEqual((info['cloud_only'], info['cloud_counting'], thread), (None, False, None))
+        info, thread = self.info_on('darwin')
+        self.assertEqual((info['cloud_only'], info['cloud_counting']), (None, True))
+        thread.join(10)
+
+    @unittest.skipUnless(shutil.which('node'), 'needs Node')
+    def test_page_asks_again_only_while_counting_with_one_timer(self):
+        """setup.js's own cloudPoll, fed the engine's answer and drawn five times (every redraw of Manage calls it): no timer on
+        Windows or Linux, one timer on a Mac while the count runs, and a new one only after that one has run."""
+        script = r"""
+const src = require('fs').readFileSync(process.argv[1], 'utf8'), infos = JSON.parse(process.argv[2]);
+const section = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)));
+const out = {};
+for (const [system, c] of Object.entries(infos)) {
+  const timers = [];
+  const setTimeout = f => { timers.push(f); return timers.length };
+  let view = 'manage', S = {}, cloudPolls = 0, cloudT = null, cloudFor = '';
+  const CLOUD_POLL_MS = 3000, CLOUD_POLLS = 20, call = async () => S, cur = () => c, manageView = () => cloudPoll(c);
+  eval(section('  function cloudPoll(', '  function manageView('));
+  for (let i = 0; i < 5; i++) cloudPoll(c);
+  out[system] = timers.length;
+}
+console.log(JSON.stringify(out));
+"""
+        infos = {system: self.info_on(system)[0] for system in ('win32', 'linux', 'darwin')}
+        r = subprocess.run([shutil.which('node'), '-e', script, str(ROOT / 'web' / 'setup.js'), json.dumps(infos)],
+                           check=True, capture_output=True, text=True, encoding='utf-8')
+        self.assertEqual(json.loads(r.stdout), {'win32': 0, 'linux': 0, 'darwin': 1})
 
 
 class Maps(Base):
@@ -2610,6 +4198,39 @@ class Maps(Base):
         self.assertIsNone(note.get('error'))
         self.assertEqual(install.map_name(new), 'CA')
         self.assertEqual((new / 'derived/geo/terrain.sqlite').read_bytes(), map_files['derived/geo/terrain.sqlite'])
+
+    def test_check_now_reports_a_damaged_state_map_and_downloads_nothing(self):
+        """Check now never downloads, even where Repair would fetch the state map again (#88): it reports the map as damaged."""
+        lib, mf, map_files = self.library_with_state_map()
+        (lib / 'derived/geo/terrain.sqlite').unlink()
+        mf.current['maps'][0]['available'] = False          # not on offer either: a check must still run, not refuse
+        s = self.setup('manage', current=lib, manifest=mf)
+        self.files.log.clear()
+        j = s.start(check=True)
+        self.assertEqual([i['kind'] for i in j['items']], ['pack'])       # no map item: nothing to fetch
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual((j['result']['map_ok'], j['result']['damaged'], j['result']['repaired']), (False, 1, False))
+        self.assertEqual(self.files.log, [])
+        self.assertFalse((lib / 'derived/geo/terrain.sqlite').exists())   # left as it was: Repair is the person's choice
+        self.assertEqual((lib / 'derived/geo/map.sqlite').read_bytes(), map_files['derived/geo/map.sqlite'])
+        self.assertEqual(s.current_info()['checked']['map_ok'], False)
+
+    def test_check_now_resumed_after_a_restart_checks_the_state_map_again(self):
+        """The state map's result is worked out again by the resumed check, from the map's files as they are then."""
+        lib, mf, map_files = self.library_with_state_map()
+        with mock.patch.object(api.Setup, '_run', lambda self_: None):
+            self.setup('manage', current=lib, manifest=mf).start(check=True)
+        (lib / 'derived/geo/terrain.sqlite').unlink()                    # damaged while Lastbook was closed
+        s = self.setup('manage', current=lib, manifest=mf)
+        self.assertEqual((s.public_job()['state'], s.public_job().get('check')), ('paused', True))
+        self.files.log.clear()
+        s.resume()
+        j = self.wait(s)
+        self.assertEqual(j['state'], 'done', j)
+        self.assertEqual((j['result']['map_ok'], j['result']['damaged'], j['result']['repaired']), (False, 1, False))
+        self.assertEqual(self.files.log, [])
+        self.assertFalse(api._work_for(lib).exists())
 
     def test_repair_says_when_a_damaged_state_map_cannot_be_fetched(self):
         lib, mf, _ = self.library_with_state_map()
@@ -2731,6 +4352,32 @@ class Maps(Base):
         self.assertIn('error', note)
         self.assertEqual((cur / 'derived/geo/map.sqlite').read_bytes(), b'old')
 
+    def test_a_console_that_cannot_show_the_message_still_records_the_error(self):
+        """A console in a non-UTF-8 locale, or a legacy Windows code page, cannot print the \u2019 in setup's own
+        wording. The diagnostic line must not take the error down with it: the note still carries the message."""
+        cur = self.parent / 'LastbookData'
+        (cur / 'library-data').mkdir(parents=True)
+        (cur / 'library-data/catalog.json').write_text('{}')
+        (cur / 'derived/geo').mkdir(parents=True)
+        (cur / 'derived/geo/map.sqlite').write_bytes(b'old')
+        work = self.parent / 'LastbookData.setup'
+        new = work / 'unpack-map' / 'LastbookData'
+        (new / 'derived/geo').mkdir(parents=True)
+        (new / 'map-set.json').write_text(json.dumps({'name': 'CA', 'files': {'derived/geo/map.sqlite': 999}}))
+        (new / 'derived/geo/map.sqlite').write_bytes(b'short')
+        self.settings.mkdir(parents=True)
+        install.stage_switch(api._pending_file(self.settings), new, cur, kind='map')
+        (self.settings / 'setup.json').write_text(json.dumps({'work': str(work)}))
+        out = io.TextIOWrapper(io.BytesIO(), encoding='ascii', newline='')
+        with mock.patch.object(sys, 'stdout', out):
+            lib, note = api.startup(self.settings)
+        self.assertIn('\u2019', note['error'])                     # the person's wording is kept whole
+        self.assertEqual((cur / 'derived/geo/map.sqlite').read_bytes(), b'old')
+        out.flush()
+        shown = out.buffer.getvalue().decode('ascii')
+        self.assertIn('setup: map switch failed:', shown)       # and the line is still printed, just with ? in it
+        self.assertIn('?', shown)
+
     def test_space_counts_the_map(self):
         mf, _ = self.map_manifest()
         s = self.setup(manifest=mf)
@@ -2772,6 +4419,23 @@ class Maps(Base):
         merged = manifest.merge(mf.current, {**mf.current, 'maps': []})
         self.assertEqual([x['id'] for x in merged['maps']], ['CA'])
 
+    def test_another_maps_unpacked_files_are_not_reused(self):
+        """#86 for maps: a file left in unpack-map/ by another map is not taken as whole because its size matches."""
+        mf, files = self.map_manifest()
+        cur = self.parent / 'LastbookData'
+        (cur / 'library-data').mkdir(parents=True)
+        (cur / 'library-data/catalog.json').write_text('{}')
+        (cur / 'pack.json').write_text('{"name": "small", "map": "base"}')
+        stale = self.parent / 'LastbookData.setup' / 'unpack-map' / 'LastbookData' / 'derived/geo/map.sqlite'
+        stale.parent.mkdir(parents=True)
+        stale.write_bytes(b'x' * len(files['derived/geo/map.sqlite']))
+        s = self.setup('manage', current=cur, manifest=mf)
+        s.start(None, False, map_id='CA')
+        self.assertEqual(self.wait(s)['state'], 'done')
+        lib, note = api.startup(self.settings)
+        self.assertIsNone(note.get('error'))
+        self.assertEqual((lib / 'derived/geo/map.sqlite').read_bytes(), files['derived/geo/map.sqlite'])
+
 
 class AddressIndexes(Maps):
     def address_manifest(self, wrong_path=False):
@@ -2789,6 +4453,24 @@ class AddressIndexes(Maps):
             'files': [{'name': name, 'url': f'{self.base}/{name}', 'size': len(data), 'sha256': sha(data), 'kind': 'zip'}]}]
         return mf, payload
 
+    def test_use_zip_of_a_pack_with_a_state_map_downloads_no_addresses(self):
+        """Codex on #465: a library zip whose pack names a state map (pack.map) still installs as it is: the address index the
+        pack's map would bring is not downloaded with it, so the import finishes offline."""
+        mf, _ = self.address_manifest()
+        for p in mf.current['packs']:
+            if p['id'] == 'small':
+                p['map'] = 'CA'
+        mine = self.tmp / 'elsewhere' / 'Lastbook-Small.zip'
+        mine.parent.mkdir()
+        mine.write_bytes(self.files.data['Lastbook-Small.zip'])
+        self.files.log.clear()
+        s = self.setup(manifest=mf)
+        j = s.use(str(mine), folder=str(self.tmp / 'chosen'))
+        self.assertIsNone(j.get('error'), j)
+        self.assertEqual([i['kind'] for i in j['items']], ['pack'])
+        self.assertEqual(self.wait(s)['state'], 'done')
+        self.assertEqual(self.files.log, [])                                   # nothing downloaded
+
     def test_fresh_map_download_includes_addresses(self):
         mf, payload = self.address_manifest()
         setup = self.setup(manifest=mf)
@@ -2798,6 +4480,25 @@ class AddressIndexes(Maps):
         library, _ = api.startup(self.settings)
         self.assertEqual((library / 'derived/geo/addresses/CA.sqlite').read_bytes(), payload)
         self.assertEqual(self.setup('manage', current=library, manifest=mf).current_info()['address_indexes'], ['CA'])
+
+    def test_first_run_without_a_map_downloads_only_the_pack(self):   # #267: setup's "No local map" sends map and address_id as null
+        mf, _ = self.address_manifest()
+        setup = self.setup(manifest=mf)
+        job = setup.start('small', map_id=None, address_id=None)
+        self.assertEqual([item['kind'] for item in job['items']], ['pack'])
+        self.assertEqual(self.wait(setup)['state'], 'done')
+        library, _ = api.startup(self.settings)
+        info = self.setup('manage', current=library, manifest=mf).current_info()
+        self.assertEqual((info['map'], info['address_indexes']), ('base', []))
+
+    def test_noted_map_and_address_files_say_what_they_are(self):
+        mf, _ = self.address_manifest()
+        s = self.setup(manifest=mf)
+        for name, kind in (('Lastbook-Map-CA.zip', 'map'), ('Lastbook-Addresses-CA.zip', 'addresses')):
+            mine = self.tmp / 'elsewhere' / name
+            mine.parent.mkdir(exist_ok=True)
+            mine.write_bytes(self.files.data[name])
+            self.assertEqual(s.use(str(mine)), {'job': None, 'noted': True, 'kind': kind})
 
     def test_existing_map_downloads_only_missing_index(self):
         mf, payload = self.address_manifest()
@@ -2815,6 +4516,22 @@ class AddressIndexes(Maps):
         self.assertEqual((library / 'derived/geo/map.sqlite').read_bytes(), b'existing map')
         self.assertEqual((library / 'derived/geo/addresses/CA.sqlite').read_bytes(), payload)
         self.assertEqual(setup.start(address_id='CA')['code'], 'nothing')
+
+    def test_another_address_downloads_unpacked_file_is_not_reused(self):
+        """#86 for address indexes: a file left in unpack-addresses/ by another download is not taken as whole."""
+        mf, payload = self.address_manifest()
+        library = self.parent / 'LastbookData'
+        (library / 'library-data').mkdir(parents=True)
+        (library / 'library-data/catalog.json').write_text('{}')
+        (library / 'pack.json').write_text('{"name":"all","map":"us"}')
+        stale = self.parent / 'LastbookData.setup' / 'unpack-addresses' / 'LastbookData' / 'derived/geo/addresses/CA.sqlite'
+        stale.parent.mkdir(parents=True)
+        stale.write_bytes(b'x' * len(payload))
+        setup = self.setup('manage', current=library, manifest=mf)
+        setup.start(address_id='CA')
+        self.assertEqual(self.wait(setup)['state'], 'done')
+        self.assertEqual((library / 'derived/geo/addresses/CA.sqlite').read_bytes(), payload)
+        self.assertEqual(list((self.parent / 'LastbookData.setup').glob('kept-*')), [])   # removed, not set aside as the person's files
 
     def test_all_library_can_add_one_state_addresses(self):
         mf, payload = self.address_manifest()
@@ -3146,7 +4863,7 @@ class Through(Base):
 
 
 @unittest.skipUnless(shutil.which('node'), 'needs Node')
-class ModelRecoveryScreen(unittest.TestCase):
+class ModelRecoveryScreen(unittest.TestCase):  # upstream, kept through rebase
     """The real setup error renderer and picker dispatch, without a server or browser dependency."""
     def screen(self, kind='model', done=0, code='network', action=False, cancel=False):
         script = r"""
@@ -3194,6 +4911,126 @@ const j = {error: {code: cfg.code}, items: [{kind: cfg.kind, state: 'failed', by
         self.assertEqual(self.screen(action=True, cancel=True)['calls'], [['pick', {'files': True}]])
 
 
+@unittest.skipUnless(shutil.which('node'), 'needs Node')
+class UnreachableScreen(unittest.TestCase):
+    """setup.js's own errorBox for an 'unreachable' stop (#254): the host, the file's facts to fetch it elsewhere, and the way to
+    choose it: #260's Choose AI model file for the model, Choose again for a library file."""
+    def box(self, kind):
+        script = r"""
+const src = require('fs').readFileSync(process.argv[1], 'utf8'), kind = process.argv[2];
+const section = (a, b) => src.slice(src.indexOf(a), src.indexOf(b, src.indexOf(a)));
+const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;'), ico = () => '', size = n => (n / 1e9).toFixed(1) + ' GB';
+const diskName = () => 'this disk', errCode = e => e && e.code, errText = e => e && e.message, cur = () => null, diskFor = () => null;
+let folder = '';
+eval(section('  function errorBox(', '  function itemHTML('));
+const error = {code: 'unreachable', message: 'Lastbook could not reach huggingface.co from this network.', host: 'huggingface.co',
+               name: 'model.gguf', size: 16947541728, url: 'https://huggingface.co/x/model.gguf?download=true&a=<b>', sha256: 'ab'.repeat(32)};
+console.log(errorBox({error, items: [{kind, state: 'failed', bytes_done: 0, error}]}));
+"""
+        r = subprocess.run([shutil.which('node'), '-e', script, str(ROOT / 'web/setup.js'), kind], check=True, capture_output=True, text=True, encoding='utf-8')
+        return r.stdout
+
+    def test_the_model_offers_its_facts_and_the_picker(self):
+        html = self.box('model')
+        self.assertIn('Lastbook can’t reach huggingface.co.', html)
+        self.assertIn('It may be down for a while', html)                # it may come back: Retry stays, and is not called useless
+        self.assertIn('Retry later', html)
+        self.assertNotIn('internet connection dropped', html)
+        for k in ('File', 'Size', 'Address', 'SHA-256'):
+            self.assertIn(f'<dt>{k}</dt>', html)
+        self.assertIn('16,947,541,728 bytes', html)                       # exact, to check a copy fetched elsewhere
+        self.assertIn('ab' * 32, html)
+        self.assertIn('&amp;a=&lt;b>', html)                              # the address is escaped
+        self.assertIn('data-act="model-file"', html)
+        self.assertIn('data-act="retry"', html)
+
+    def test_a_library_file_points_to_choose_again(self):
+        html = self.box('pack')
+        self.assertIn('<dt>SHA-256</dt>', html)
+        self.assertNotIn('data-act="model-file"', html)
+        self.assertIn('Choose a library zip or AI model file', html)
+
+
+@unittest.skipUnless(shutil.which('node'), 'Node is not installed')
+class SkipMap(unittest.TestCase):
+    """#267: setup can finish without a state map on Small (no state map) and All (every state's), not on Medium (California's).
+
+    The fixture uses the validated-manifest shape: validate() keeps a published packs[].map only when it
+    names a map, so entries that omit it all arrive as None (engine/setup/manifest.py). The skip option
+    must still describe each pack's actual result."""
+    def run_helpers(self, pack, picked, current=None):
+        source = (ROOT / 'web/setup.js').read_text(encoding='utf-8')
+        start = source.index('  const packs =')
+        helpers = source[start:source.index('  const packDl =', start)]
+        state = {'manifest': {'packs': [{'id': 'small', 'map': None}, {'id': 'medium', 'map': None}, {'id': 'all', 'map': None}],
+                              'maps': [{'id': 'CA', 'title': 'California'}], 'address_indexes': [{'id': 'CA', 'available': True}]},
+                 'current': current}
+        script = (f'const S = {json.dumps(state)};\nconst choice = {json.dumps({"pack": pack, "ai": False, "map": picked})};\n' + helpers +
+                  '\nconsole.log(JSON.stringify({offered: canSkipMap(), skipped: skippedMap(), missing: mapMissing(), state: selectedState(),'
+                  ' map: mapAdds() ? mapAdds().id : null, address: addressAdds() ? addressAdds().id : null}))')
+        run = subprocess.run(['node', '-e', script], text=True, capture_output=True, check=True)
+        return json.loads(run.stdout)
+
+    def run_switch(self, from_pack, to_pack, picked):
+        source = (ROOT / 'web/setup.js').read_text(encoding='utf-8')
+        start = source.index('  const packs =')
+        helpers = source[start:source.index('  const packDl =', start)]
+        state = {'manifest': {'packs': [{'id': 'small', 'map': None}, {'id': 'medium', 'map': None}, {'id': 'all', 'map': None}],
+                              'maps': [{'id': 'CA', 'title': 'California'}], 'address_indexes': [{'id': 'CA', 'available': True}]},
+                 'current': None}
+        script = (f'const S = {json.dumps(state)};\nconst choice = {json.dumps({"pack": from_pack, "ai": False, "map": picked})};\n' + helpers +
+                  f'\nsetPack({json.dumps(to_pack)});' +
+                  '\nconsole.log(JSON.stringify({kept: choice.map, offered: canSkipMap(), skipped: skippedMap(), missing: mapMissing(), state: selectedState(),'
+                  ' map: mapAdds() ? mapAdds().id : null, address: addressAdds() ? addressAdds().id : null}))')
+        run = subprocess.run(['node', '-e', script], text=True, capture_output=True, check=True)
+        return json.loads(run.stdout)
+
+    def test_small_without_a_map(self):
+        self.assertEqual(self.run_helpers('small', None), {'offered': True, 'skipped': False, 'missing': True, 'state': '', 'map': None, 'address': None})
+        self.assertEqual(self.run_helpers('small', 'none'), {'offered': True, 'skipped': True, 'missing': False, 'state': '', 'map': None, 'address': None})
+
+    def test_all_without_address_search(self):
+        self.assertEqual(self.run_helpers('all', 'none'), {'offered': True, 'skipped': True, 'missing': False, 'state': '', 'map': None, 'address': None})
+
+    def test_medium_keeps_its_own_map(self):   # "none" left over from Small: Medium still has California, as before
+        self.assertEqual(self.run_helpers('medium', 'none'), {'offered': False, 'skipped': False, 'missing': False, 'state': 'CA', 'map': None, 'address': 'CA'})
+
+    def test_a_chosen_state_is_unchanged(self):
+        self.assertEqual(self.run_helpers('small', 'CA'), {'offered': True, 'skipped': False, 'missing': False, 'state': 'CA', 'map': 'CA', 'address': 'CA'})
+
+    def test_library_with_a_map_offers_no_skip(self):   # Library and local AI: a Small library that already has a state map keeps it
+        current = {'pack': 'small', 'map': 'CA', 'address_indexes': ['CA']}
+        self.assertEqual(self.run_helpers('small', None, current), {'offered': False, 'skipped': False, 'missing': False, 'state': 'CA', 'map': None, 'address': None})
+
+    def test_switching_from_all_to_small_drops_the_skip(self):   # "no address search" must not become "no local map" by itself
+        self.assertEqual(self.run_switch('all', 'small', 'none'),
+                         {'kept': None, 'offered': True, 'skipped': False, 'missing': True, 'state': '', 'map': None, 'address': None})
+
+    def test_switching_from_small_to_all_drops_the_skip(self):   # "no local map" must not become "no address search" by itself
+        self.assertEqual(self.run_switch('small', 'all', 'none'),
+                         {'kept': None, 'offered': True, 'skipped': False, 'missing': True, 'state': '', 'map': None, 'address': None})
+
+    def test_switching_to_medium_drops_the_skip(self):   # the drop is harmless there: Medium resolves California either way
+        self.assertEqual(self.run_switch('small', 'medium', 'none'),
+                         {'kept': None, 'offered': False, 'skipped': False, 'missing': False, 'state': 'CA', 'map': None, 'address': 'CA'})
+
+    def test_switching_packs_keeps_a_chosen_state(self):
+        self.assertEqual(self.run_switch('small', 'all', 'CA'),
+                         {'kept': 'CA', 'offered': True, 'skipped': False, 'missing': False, 'state': 'CA', 'map': None, 'address': 'CA'})
+
+    def test_same_pack_keeps_the_skip(self):   # re-entering choose for the same pack changes nothing
+        self.assertEqual(self.run_switch('small', 'small', 'none'),
+                         {'kept': 'none', 'offered': True, 'skipped': True, 'missing': False, 'state': '', 'map': None, 'address': None})
+
+    def test_validated_manifest_nulls_an_omitted_pack_map(self):   # the shape above is what validate() really outputs
+        file = {'name': 'small.zip', 'url': 'https://127.0.0.1/small.zip', 'size': 10, 'sha256': '0' * 64}
+        raw = {'version': 1, 'packs': [{'id': 'small', 'title': 'Small', 'files': [file]},
+                                       {'id': 'medium', 'title': 'Medium', 'files': [file], 'map': 'CA'}]}
+        packs = {p['id']: p for p in manifest.validate(raw, allowed=ALLOWED)['packs']}
+        self.assertIsNone(packs['small']['map'])
+        self.assertEqual(packs['medium']['map'], 'CA')
+
+
 @unittest.skipUnless(os.environ.get('LASTBOOK_FULL_DISK') == '1' and sys.platform == 'darwin', 'LASTBOOK_FULL_DISK=1 on a Mac')
 class FullDisk(Base):
     def test_disk_fills_during_download(self):
@@ -3230,6 +5067,266 @@ def child(cfg):
     s = api.Setup('first-run', cfg['settings'], cfg['parent'], manifest=m, allowed=ALLOWED, context=ctx, home=cfg['home'], llm_local=False)
     print(s.start('small', False), flush=True)
     time.sleep(600)
+
+
+
+# ------------------------------------------------------------------------------------- a model server on this computer --
+class ModelServerFake(http.server.BaseHTTPRequestHandler):
+    """An OpenAI-style server on 127.0.0.1: /v1/models answers with ANSWER (status, body). Counts what it is asked."""
+    ANSWER = (200, b'{"object":"list","data":[{"id":"small-9b"},{"id":"other"}]}')
+    asked = []
+
+    def do_GET(self):
+        ModelServerFake.asked.append(self.path)
+        status, body = ModelServerFake.ANSWER
+        self.send_response(status)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *a):
+        pass
+
+
+class ModelServer(Base):
+    """#78: a model server the person chooses in Setup. Asked only when the person asks, and only on this computer."""
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.fake = socketserver.ThreadingTCPServer(('127.0.0.1', 0), ModelServerFake)
+        cls.fake.daemon_threads = True
+        threading.Thread(target=cls.fake.serve_forever, daemon=True).start()
+        cls.where = f'127.0.0.1:{cls.fake.server_address[1]}'
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.fake.shutdown()
+        cls.fake.server_close()
+        super().tearDownClass()
+
+    def setUp(self):
+        super().setUp()
+        ModelServerFake.ANSWER = (200, b'{"object":"list","data":[{"id":"small-9b"},{"id":"other"}]}')
+        ModelServerFake.asked = []
+        self.switched = []
+
+    def chooser(self, mode='manage'):
+        return self.setup(mode, current=self.tmp if mode == 'manage' else None, on_model_server=lambda b, m: self.switched.append((b, m)))
+
+    def test_fresh_setup_asks_no_model_server(self):
+        from engine import model_server
+        with mock.patch.object(model_server, 'model_open', side_effect=AssertionError('a model server was asked')):
+            for mode in ('first-run', 'manage'):
+                st = self.chooser(mode).state()
+                self.assertIsNone(st['model_server'])
+        self.assertEqual(ModelServerFake.asked, [])
+        self.assertFalse((self.settings / 'setup.json').exists() and 'model_server' in json.loads((self.settings / 'setup.json').read_text(encoding='utf-8')))
+
+    def test_lists_the_models_of_the_chosen_server(self):
+        s = self.chooser()
+        for typed in (self.where, 'localhost:' + self.where.split(':')[1] + '/v1', f'http://{self.where}/', f' http://{self.where}/v1/ '):
+            got = s.server_models(typed)
+            self.assertEqual(got, {'base': 'http://' + self.where, 'address': self.where, 'models': ['small-9b', 'other']}, typed)
+        self.assertEqual(set(ModelServerFake.asked), {'/v1/models'})
+
+    def test_only_this_computer(self):
+        from engine import model_server
+        s = self.chooser()
+        with mock.patch.object(model_server, 'model_open', side_effect=AssertionError('asked')):
+            for typed in ('10.0.0.5:8080', 'example.org:80', 'https://127.0.0.1:1', '0.0.0.0:8080', '127.0.0.1:1@example.org:1', '', None, '127.0.0.1', '127.0.0.1:0', '127.0.0.1:70000'):
+                got = s.server_models(typed)
+                self.assertEqual(got['code'], 'not_here', typed)
+                self.assertIn('on this computer', got['error'])
+                self.assertEqual(s.use_server(typed, 'small-9b')['code'], 'not_here')
+        self.assertEqual(self.switched, [])
+
+    def test_an_unavailable_server_is_named_in_the_error(self):
+        with socket.socket() as k:    # a port that was free a moment ago: nothing listens there
+            k.bind(('127.0.0.1', 0))
+            port = k.getsockname()[1]
+        got = self.chooser().server_models(f'127.0.0.1:{port}')
+        self.assertEqual(got['code'], 'no_answer')
+        self.assertIn(f'127.0.0.1:{port}', got['error'])
+        self.assertNotIn('http', got['error'])
+
+    def test_servers_that_do_not_list_models(self):
+        for answer, code in (((401, b'{"error":"Invalid API Key"}'), 'needs_key'), ((403, b''), 'needs_key'), ((500, b'x'), 'no_list'),
+                             ((200, b'not json'), 'no_list'), ((200, b'{"data":"x"}'), 'no_list'), ((200, b'[1,2]'), 'no_list'),
+                             ((200, b'{"data":[]}'), 'no_models'), ((200, b'{"data":[{"name":"no id"}]}'), 'no_models')):
+            ModelServerFake.ANSWER = answer
+            got = self.chooser().server_models(self.where)
+            self.assertEqual(got['code'], code, answer)
+            self.assertIn(self.where, got['error'])
+
+    def test_choosing_saves_and_switches(self):
+        self.settings.mkdir(parents=True, exist_ok=True)
+        (self.settings / 'setup.json').write_text('{"old": ["/path/to/old"]}', encoding='utf-8')
+        s = self.chooser()
+        self.assertEqual(s.use_server(self.where, 'small-9b'), {'model_server': {'address': self.where, 'model': 'small-9b'}})
+        saved = json.loads((self.settings / 'setup.json').read_text(encoding='utf-8'))
+        self.assertEqual(saved, {'old': ['/path/to/old'], 'model_server': {'base': 'http://' + self.where, 'model': 'small-9b'}})
+        self.assertEqual(self.switched, [('http://' + self.where, 'small-9b')])
+        self.assertEqual(api.saved_model_server(self.settings), ('http://' + self.where, 'small-9b'))
+        self.assertEqual(self.chooser('first-run').state()['model_server'], {'address': self.where, 'model': 'small-9b'})
+
+        self.assertEqual(s.stop_server(), {'model_server': None})
+        self.assertEqual(json.loads((self.settings / 'setup.json').read_text(encoding='utf-8')), {'old': ['/path/to/old']})
+        self.assertEqual(self.switched[-1], (None, None))
+        self.assertIsNone(api.saved_model_server(self.settings))
+
+    def test_a_model_the_server_does_not_list_is_not_saved(self):
+        s = self.chooser()
+        for model in ('gone', '', None, ['small-9b']):
+            got = s.use_server(self.where, model)
+            self.assertEqual(got['code'], 'not_listed', model)
+        self.assertIsNone(api.saved_model_server(self.settings))
+        self.assertEqual(self.switched, [])
+
+    def test_a_changed_setup_json_cannot_point_off_this_computer(self):
+        self.settings.mkdir(parents=True, exist_ok=True)
+        for saved in ({'base': 'http://10.0.0.5:8080', 'model': 'm'}, {'base': 'http://example.org:80', 'model': 'm'}, {'base': 'http://127.0.0.1:1'},
+                      {'base': 'http://127.0.0.1:1', 'model': 7}, {'base': 'http://127.0.0.1:1', 'model': 'x' * 201}, 'http://127.0.0.1:1', None):
+            (self.settings / 'setup.json').write_text(json.dumps({'model_server': saved}), encoding='utf-8')
+            self.assertIsNone(api.saved_model_server(self.settings), saved)
+            self.assertIsNone(self.chooser().model_server(), saved)
+
+    def test_the_open_library_follows_the_saved_choice(self):
+        self.chooser().use_server(self.where, 'small-9b')
+        for env, want in (({}, [('http://' + self.where, 'small-9b')]), ({'SURVIVAL_MODEL_BASE': 'http://127.0.0.1:9'}, [])):
+            used = []
+            with mock.patch.object(api, 'SETUP', self.setup('manage', current=self.tmp)), mock.patch.dict(os.environ, env):
+                if not env:
+                    os.environ.pop('SURVIVAL_MODEL_BASE', None)    # test_bridge sets it for the whole run; patch.dict puts it back
+                api.follow_model_server(lambda b, m: used.append((b, m)))
+                self.assertEqual(used, want, env)
+                api.SETUP.use_server(self.where, 'other')     # a choice made now counts, whatever Lastbook was started with
+                self.assertEqual(used[-1], ('http://' + self.where, 'other'))
+                api.SETUP.use_server(self.where, 'small-9b')
+
+    def test_two_windows_the_last_completed_choice_wins_both_places(self):
+        """One window chooses a model while the other stops using it: the saved choice and the running Chat end the same,
+        as the action that finished last left them."""
+        base = 'http://' + self.where
+        for slow in ('switch', 'list'):    # the choosing window is held after saving, or while it asks the server for its models
+            with self.subTest(slow=slow):
+                self.switched, finished, held, let_go = [], [], threading.Event(), threading.Event()
+                s = self.chooser()
+                switch, listing = s.on_model_server, api.model_server.list_models
+
+                def slow_switch(b, m):
+                    if b and slow == 'switch':
+                        held.set()
+                        let_go.wait(1)    # the stop waits here once the two are kept in order; otherwise it slips in
+                    switch(b, m)
+
+                def slow_list(text):
+                    if slow == 'list':
+                        held.set()
+                        let_go.wait(5)
+                    return listing(text)
+
+                s.on_model_server = slow_switch
+                with mock.patch.object(api.model_server, 'list_models', side_effect=slow_list):
+                    choose = threading.Thread(target=lambda: (s.use_server(self.where, 'small-9b'), finished.append('use')))
+                    choose.start()
+                    self.assertTrue(held.wait(5))
+                    stop = threading.Thread(target=lambda: (s.stop_server(), finished.append('stop')))
+                    stop.start()
+                    stop.join(0.3)
+                    let_go.set()
+                    choose.join(10)
+                    stop.join(10)
+
+                want = (base, 'small-9b') if finished[-1] == 'use' else None
+                self.assertEqual(api.saved_model_server(self.settings), want, finished)
+                self.assertEqual(self.switched[-1], want or (None, None), finished)
+
+    def test_routes(self):
+        self.assertIn(('POST', 'server-models'), api.ROUTES)
+        s = self.chooser()
+        self.assertEqual(api.ROUTES[('POST', 'server-models')](s, {'address': self.where})['models'], ['small-9b', 'other'])
+        self.assertEqual(api.ROUTES[('POST', 'use-server')](s, {'address': self.where, 'model': 'other'})['model_server']['model'], 'other')
+        self.assertEqual(api.ROUTES[('POST', 'stop-server')](s, {}), {'model_server': None})
+class ManifestRace(Base):
+    """Running from source there is no bundled manifest: the first state() must not answer with an empty list while the fetch runs."""
+
+    EMPTY = {'version': 1, 'published': '', 'packs': [], 'models': [], 'maps': []}
+
+    def empty_setup(self, fetch):
+        mf = manifest.Manifest(bundled=dict(self.EMPTY), remote='https://127.0.0.1/manifest-v1.json', allowed=ALLOWED, context=self.ctx)
+        with mock.patch.object(download, 'fetch_small', fetch):
+            return self.setup(manifest=mf)
+
+    def test_first_state_waits_for_the_fetch(self):
+        data = json.dumps(self.manifest().current).encode()
+
+        def slow(*a, **k):
+            time.sleep(0.4)
+            return data
+        s = self.empty_setup(slow)
+        with mock.patch.object(download, 'fetch_small', slow):
+            st = s.state()
+        self.assertEqual([p['id'] for p in st['manifest']['packs']], ['small', 'all'])
+
+    def test_failed_fetch_is_tried_again_by_a_later_state(self):
+        data = json.dumps(self.manifest().current).encode()
+        calls = []
+
+        def flaky(*a, **k):
+            calls.append(1)
+            return None if len(calls) == 1 else data
+        s = self.empty_setup(flaky)
+        with mock.patch.object(download, 'fetch_small', flaky), mock.patch.object(manifest, 'RETRY_S', 0):
+            self.assertEqual(s.state()['manifest']['packs'], [])
+            self.assertEqual([p['id'] for p in s.state()['manifest']['packs']], ['small', 'all'])
+
+    def test_a_bundled_manifest_never_waits(self):
+        mf = self.manifest()
+        mf.remote = 'https://127.0.0.1/manifest-v1.json'
+
+        def slow(*a, **k):
+            time.sleep(2)
+        s = self.setup(manifest=mf)
+        with mock.patch.object(download, 'fetch_small', slow):
+            t0 = time.time()
+            s.state()
+        self.assertLess(time.time() - t0, 1.0)
+
+    def test_concurrent_calls_start_one_fetch(self):
+        calls = []
+        real = threading.Thread
+
+        def slow_thread(*a, **k):
+            time.sleep(0.2)          # the window between "no fetch yet" and the fetch being recorded
+            return real(*a, **k)
+
+        def fetch(*a, **k):
+            calls.append(1)
+            time.sleep(0.5)
+        mf = manifest.Manifest(bundled=dict(self.EMPTY), remote='https://127.0.0.1/manifest-v1.json', allowed=ALLOWED, context=self.ctx)
+        with mock.patch.object(download, 'fetch_small', fetch), mock.patch.object(manifest.threading, 'Thread', slow_thread), \
+                mock.patch.object(manifest, 'WAIT_S', 3):
+            ts = [real(target=mf.fetch_once) for _ in range(3)]
+            [t.start() for t in ts]
+            [t.join(10) for t in ts]
+        self.assertEqual(len(calls), 1)
+
+
+@unittest.skipUnless(shutil.which('node'), 'needs node on PATH')
+class SetupScreen(unittest.TestCase):
+    """web/setup.js run in Node with a fake page (app/tests/setup_js_test.mjs)."""
+
+    def test_screen_asks_again_while_the_list_is_empty(self):
+        r = subprocess.run([shutil.which('node'), str(HERE / 'setup_js_test.mjs')], capture_output=True, text=True, timeout=60)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_background_ask_keeps_keyboard_focus_in_a_real_browser(self):
+        """app/tests/setup_focus_browser_test.mjs: setup.html in headless Chrome or Chromium; skipped when neither is found."""
+        r = subprocess.run([shutil.which('node'), str(HERE / 'setup_focus_browser_test.mjs')], capture_output=True, text=True, timeout=90)
+        if r.returncode == 2:
+            self.skipTest(r.stdout.strip())
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
 
 if __name__ == '__main__':

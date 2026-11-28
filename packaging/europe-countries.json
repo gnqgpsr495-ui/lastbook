@@ -1,0 +1,522 @@
+{
+ "_about": "European country map regions for packaging/build_packs.py and packaging/state_maps.py. box is [west, south, east, north] in degrees: the bounding box of the clipping polygon of Geofabrik's OpenStreetMap country extract (download.geofabrik.de/index-v1.json, read on 2026-11-17), the same kind of envelope the state boxes are, before the 0.15 degree margin region_box adds. extract is the Geofabrik extract id. XK is Kosovo's user-assigned ISO code. Norway's extract includes Svalbard and Portugal's includes the Azores and Madeira, so their boxes reach that far; Ireland's extract also covers Northern Ireland. Being listed here only makes a build possible: publishing is opt-in in packaging/country-publication.json.",
+ "countries": {
+  "eu-al": {
+   "title": "Albania",
+   "iso": "AL",
+   "extract": "albania",
+   "box": [
+    18.8965,
+    39.6274,
+    21.0629,
+    42.6631
+   ]
+  },
+  "eu-ad": {
+   "title": "Andorra",
+   "iso": "AD",
+   "extract": "andorra",
+   "box": [
+    1.4124,
+    42.4276,
+    1.7875,
+    42.6572
+   ]
+  },
+  "eu-at": {
+   "title": "Austria",
+   "iso": "AT",
+   "extract": "austria",
+   "box": [
+    9.5268,
+    46.3698,
+    17.1641,
+    49.024
+   ]
+  },
+  "eu-by": {
+   "title": "Belarus",
+   "iso": "BY",
+   "extract": "belarus",
+   "box": [
+    23.1748,
+    51.2344,
+    32.7695,
+    56.1739
+   ]
+  },
+  "eu-be": {
+   "title": "Belgium",
+   "iso": "BE",
+   "extract": "belgium",
+   "box": [
+    2.3407,
+    49.4949,
+    6.4103,
+    51.5984
+   ]
+  },
+  "eu-ba": {
+   "title": "Bosnia and Herzegovina",
+   "iso": "BA",
+   "extract": "bosnia-herzegovina",
+   "box": [
+    15.7156,
+    42.5524,
+    19.6264,
+    45.278
+   ]
+  },
+  "eu-bg": {
+   "title": "Bulgaria",
+   "iso": "BG",
+   "extract": "bulgaria",
+   "box": [
+    22.3487,
+    41.2268,
+    29.1882,
+    44.2178
+   ]
+  },
+  "eu-hr": {
+   "title": "Croatia",
+   "iso": "HR",
+   "extract": "croatia",
+   "box": [
+    13.0892,
+    42.1648,
+    19.46,
+    46.5576
+   ]
+  },
+  "eu-cy": {
+   "title": "Cyprus",
+   "iso": "CY",
+   "extract": "cyprus",
+   "box": [
+    31.9524,
+    34.2337,
+    34.9615,
+    36.0032
+   ]
+  },
+  "eu-cz": {
+   "title": "Czech Republic",
+   "iso": "CZ",
+   "extract": "czech-republic",
+   "box": [
+    12.0848,
+    48.5429,
+    18.8632,
+    51.0643
+   ]
+  },
+  "eu-dk": {
+   "title": "Denmark",
+   "iso": "DK",
+   "extract": "denmark",
+   "box": [
+    7.7011,
+    54.4406,
+    15.6545,
+    58.0624
+   ]
+  },
+  "eu-ee": {
+   "title": "Estonia",
+   "iso": "EE",
+   "extract": "estonia",
+   "box": [
+    20.8517,
+    57.4976,
+    28.2143,
+    59.9971
+   ]
+  },
+  "eu-fo": {
+   "title": "Faroe Islands",
+   "iso": "FO",
+   "extract": "faroe-islands",
+   "box": [
+    -8.6902,
+    60.8663,
+    -5.5151,
+    62.9052
+   ]
+  },
+  "eu-fi": {
+   "title": "Finland",
+   "iso": "FI",
+   "extract": "finland",
+   "box": [
+    19.0243,
+    59.2878,
+    31.6159,
+    70.0996
+   ]
+  },
+  "eu-fr": {
+   "title": "France",
+   "iso": "FR",
+   "extract": "france",
+   "box": [
+    -6.9372,
+    41.2387,
+    9.9,
+    51.4288
+   ]
+  },
+  "eu-ge": {
+   "title": "Georgia",
+   "iso": "GE",
+   "extract": "georgia",
+   "box": [
+    39.8809,
+    41.0512,
+    46.7396,
+    43.5899
+   ]
+  },
+  "eu-de": {
+   "title": "Germany",
+   "iso": "DE",
+   "extract": "germany",
+   "box": [
+    5.8644,
+    47.2654,
+    15.0508,
+    55.1478
+   ]
+  },
+  "eu-gr": {
+   "title": "Greece",
+   "iso": "GR",
+   "extract": "greece",
+   "box": [
+    18.9706,
+    34.5911,
+    29.6568,
+    41.7495
+   ]
+  },
+  "eu-hu": {
+   "title": "Hungary",
+   "iso": "HU",
+   "extract": "hungary",
+   "box": [
+    16.1085,
+    45.7321,
+    22.9065,
+    48.5892
+   ]
+  },
+  "eu-is": {
+   "title": "Iceland",
+   "iso": "IS",
+   "extract": "iceland",
+   "box": [
+    -25.7,
+    62.8455,
+    -12.4171,
+    67.5008
+   ]
+  },
+  "eu-ie": {
+   "title": "Ireland",
+   "iso": "IE",
+   "extract": "ireland-and-northern-ireland",
+   "box": [
+    -14.4022,
+    49.6,
+    -5.0593,
+    56.8655
+   ]
+  },
+  "eu-im": {
+   "title": "Isle of Man",
+   "iso": "IM",
+   "extract": "isle-of-man",
+   "box": [
+    -5.4346,
+    53.7324,
+    -3.6887,
+    54.6706
+   ]
+  },
+  "eu-it": {
+   "title": "Italy",
+   "iso": "IT",
+   "extract": "italy",
+   "box": [
+    6.6027,
+    35.0764,
+    19.125,
+    47.1001
+   ]
+  },
+  "eu-xk": {
+   "title": "Kosovo",
+   "iso": "XK",
+   "extract": "kosovo",
+   "box": [
+    20.0136,
+    41.8541,
+    21.7933,
+    43.2775
+   ]
+  },
+  "eu-lv": {
+   "title": "Latvia",
+   "iso": "LV",
+   "extract": "latvia",
+   "box": [
+    19.7335,
+    55.6611,
+    28.255,
+    58.0947
+   ]
+  },
+  "eu-li": {
+   "title": "Liechtenstein",
+   "iso": "LI",
+   "extract": "liechtenstein",
+   "box": [
+    9.4711,
+    47.0477,
+    9.6362,
+    47.2713
+   ]
+  },
+  "eu-lt": {
+   "title": "Lithuania",
+   "iso": "LT",
+   "extract": "lithuania",
+   "box": [
+    20.6186,
+    53.8922,
+    26.8387,
+    56.4533
+   ]
+  },
+  "eu-lu": {
+   "title": "Luxembourg",
+   "iso": "LU",
+   "extract": "luxembourg",
+   "box": [
+    5.733,
+    49.4455,
+    6.5322,
+    50.185
+   ]
+  },
+  "eu-mt": {
+   "title": "Malta",
+   "iso": "MT",
+   "extract": "malta",
+   "box": [
+    14.0,
+    35.5198,
+    14.8561,
+    36.333
+   ]
+  },
+  "eu-md": {
+   "title": "Moldova",
+   "iso": "MD",
+   "extract": "moldova",
+   "box": [
+    26.6123,
+    45.4616,
+    30.1925,
+    48.494
+   ]
+  },
+  "eu-mc": {
+   "title": "Monaco",
+   "iso": "MC",
+   "extract": "monaco",
+   "box": [
+    7.4086,
+    43.4838,
+    7.5957,
+    43.7529
+   ]
+  },
+  "eu-me": {
+   "title": "Montenegro",
+   "iso": "ME",
+   "extract": "montenegro",
+   "box": [
+    18.1728,
+    41.6162,
+    20.3588,
+    43.5622
+   ]
+  },
+  "eu-nl": {
+   "title": "Netherlands",
+   "iso": "NL",
+   "extract": "netherlands",
+   "box": [
+    2.9361,
+    50.7475,
+    7.2305,
+    54.0179
+   ]
+  },
+  "eu-mk": {
+   "title": "North Macedonia",
+   "iso": "MK",
+   "extract": "macedonia",
+   "box": [
+    20.4467,
+    40.8476,
+    23.0401,
+    42.3797
+   ]
+  },
+  "eu-no": {
+   "title": "Norway",
+   "iso": "NO",
+   "extract": "norway",
+   "box": [
+    -11.368,
+    57.5532,
+    35.5271,
+    81.052
+   ]
+  },
+  "eu-pl": {
+   "title": "Poland",
+   "iso": "PL",
+   "extract": "poland",
+   "box": [
+    13.9902,
+    48.9864,
+    24.161,
+    55.2283
+   ]
+  },
+  "eu-pt": {
+   "title": "Portugal",
+   "iso": "PT",
+   "extract": "portugal",
+   "box": [
+    -31.6,
+    29.7,
+    -6.1795,
+    42.1639
+   ]
+  },
+  "eu-ro": {
+   "title": "Romania",
+   "iso": "RO",
+   "extract": "romania",
+   "box": [
+    20.2418,
+    43.6125,
+    30.279,
+    48.2695
+   ]
+  },
+  "eu-rs": {
+   "title": "Serbia",
+   "iso": "RS",
+   "extract": "serbia",
+   "box": [
+    18.8089,
+    42.2298,
+    23.0103,
+    46.1921
+   ]
+  },
+  "eu-sk": {
+   "title": "Slovakia",
+   "iso": "SK",
+   "extract": "slovakia",
+   "box": [
+    16.8307,
+    47.7265,
+    22.5705,
+    49.6186
+   ]
+  },
+  "eu-si": {
+   "title": "Slovenia",
+   "iso": "SI",
+   "extract": "slovenia",
+   "box": [
+    13.3051,
+    45.4208,
+    16.6003,
+    46.8796
+   ]
+  },
+  "eu-es": {
+   "title": "Spain",
+   "iso": "ES",
+   "extract": "spain",
+   "box": [
+    -9.779,
+    35.2639,
+    5.0985,
+    44.1486
+   ]
+  },
+  "eu-se": {
+   "title": "Sweden",
+   "iso": "SE",
+   "extract": "sweden",
+   "box": [
+    10.5414,
+    55.0265,
+    24.2247,
+    69.0664
+   ]
+  },
+  "eu-ch": {
+   "title": "Switzerland",
+   "iso": "CH",
+   "extract": "switzerland",
+   "box": [
+    5.9544,
+    45.8164,
+    10.4958,
+    47.8113
+   ]
+  },
+  "eu-tr": {
+   "title": "Türkiye",
+   "iso": "TR",
+   "extract": "turkey",
+   "box": [
+    25.524,
+    35.717,
+    44.8599,
+    43.0748
+   ]
+  },
+  "eu-ua": {
+   "title": "Ukraine",
+   "iso": "UA",
+   "extract": "ukraine",
+   "box": [
+    22.1326,
+    44.0086,
+    40.2381,
+    52.3865
+   ]
+  },
+  "eu-gb": {
+   "title": "United Kingdom",
+   "iso": "GB",
+   "extract": "united-kingdom",
+   "box": [
+    -14.8585,
+    49.4192,
+    2.6418,
+    61.1356
+   ]
+  }
+ }
+}

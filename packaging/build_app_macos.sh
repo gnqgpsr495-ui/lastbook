@@ -6,6 +6,9 @@
 # derived/app-build/mac/Lastbook.app points at the newest good one.
 # The app is ad-hoc signed by the build tool and nothing more: no certificate, no notarization.
 # Optional: put one word per line in derived/app-build/scan-terms.txt (machine names, user names) and the scan refuses a package holding any.
+# Optional, Update now (app/update_macos.py): set both LASTBOOK_SPARKLE_ARCHIVE (the official Sparkle-<version>.tar.xz, fetched by hand,
+# its SHA-256 pinned in sparkle.lock.json) and LASTBOOK_SPARKLE_PUBLIC_ED_KEY (generate_keys' public key). Neither: About offers the
+# download page, as before. Only one, or a digest that does not match: the build stops.
 set -euo pipefail
 HERE="$(dirname "$(/bin/realpath "$0")")"
 ROOT="$(dirname "$HERE")"
@@ -30,8 +33,15 @@ uv pip install --python "$VENV/bin/python" -r "$HERE/requirements_macos.txt"
 # Release gate: setup's downloader verifies every download host through engine/setup/roots.pem only (no system trust store)
 "$VENV/bin/python" -I -B "$HERE/check_tls_roots.py" || { echo "TLS roots gate failed: refresh engine/setup/roots.pem (packaging/setup_roots.py)" >&2; exit 1; }
 export LASTBOOK_SHIP="$OUT/ship"
+SPARKLE_ARCHIVE="${LASTBOOK_SPARKLE_ARCHIVE:-}"
+if { [ -n "$SPARKLE_ARCHIVE" ] && [ -z "${LASTBOOK_SPARKLE_PUBLIC_ED_KEY:-}" ]; } || { [ -z "$SPARKLE_ARCHIVE" ] && [ -n "${LASTBOOK_SPARKLE_PUBLIC_ED_KEY:-}" ]; }; then
+  echo "Update now needs both LASTBOOK_SPARKLE_ARCHIVE and LASTBOOK_SPARKLE_PUBLIC_ED_KEY, or neither." >&2
+  exit 1
+fi
 "$VENV/bin/python" -m PyInstaller --noconfirm --distpath "$OUT/dist" --workpath "$OUT/work" "$HERE/lastbook_macos.spec" 2>&1 | tee "$OUT/build.log"
 BUNDLE="$OUT/dist/Lastbook.app"
+[ -z "$SPARKLE_ARCHIVE" ] || "$VENV/bin/python" -I -B "$HERE/sparkle_framework.py" "$SPARKLE_ARCHIVE" "$BUNDLE"
+"$VENV/bin/python" -I -B "$HERE/i18n_catalogs.py" --check --web-dir "$BUNDLE/Contents/Resources/web"
 "$VENV/bin/python" "$HERE/scan_package_macos.py" "$BUNDLE" --terms-file "$BUILD/scan-terms.txt" | tee "$OUT/scan.txt"
 codesign --verify --deep --strict "$BUNDLE"
 ln -sfn "$BUNDLE" "$BUILD/mac/Lastbook.app"

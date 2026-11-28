@@ -62,7 +62,7 @@
   {
    "id": "throwout",
    "label": "Deciding what to throw out",
-   "hint": "Warm meat, swollen cans, odd smell",
+   "hint": "Warm meat, defrosted, whether to refreeze, swollen or dented cans, odd smell",
    "read": [
     {
      "doc": "e4bfed4b6afd6d",
@@ -111,7 +111,7 @@
   {
    "id": "cook",
    "label": "Cooking without power or gas",
-   "hint": "Camp stove, grill, fireplace, canned or tinned food",
+   "hint": "Camp stove, grill, fireplace, no cooker or hob, canned or tinned food",
    "read": [
     {
      "doc": "18bf4604bf28c4",
@@ -168,6 +168,8 @@
    "id": "special",
    "label": "Feeding babies or people with special diets",
    "hint": "Formula, elderly, illness, allergies, pets",
+   "phrases": ["out of formula", "out of baby formula", "run out of formula", "running out of formula", "ran out of formula", "low on formula", "running low on formula"],
+   "context": ["ran", "run", "running", "low", "baby", "babys", "newborn", "infant", "we", "nearly", "almost", "completely", "days", "week", "shop", "shops", "store", "stores"],
    "read": [
     {
      "doc": "e4bfed4b6afd6d",

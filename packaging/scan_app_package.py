@@ -22,11 +22,11 @@ from pathlib import Path
 import pefile
 from PyInstaller.archive.readers import CArchiveReader, ZlibArchiveReader
 
-FIRST_PARTY_MODULES = re.compile(r'^(main|server|retrieval|assistant|llm_local|bridge|shell_windows|engine(\..*)?)$')
-BANNED_MODULES = re.compile(r'^(shell_macos|remote_storage|lastbook_launcher|test_bridge|fixture|http_regression|real_data_check|'
+FIRST_PARTY_MODULES = re.compile(r'^(main|server|retrieval|assistant|llm_local|bridge|contribute|ui_language|shell_windows|engine(\..*)?)$')
+BANNED_MODULES = re.compile(r'^(shell_macos|update_macos|remote_storage|lastbook_launcher|test_bridge|fixture|http_regression|real_data_check|'
                             r'mac_driver|mac_offscreen|mac_ui_check|mac_main_check|win_app|win_driver|cdp|tests(\..*)?|app\.tests(\..*)?|'
                             r'webview(\..*)?|bottle|proxy_tools|objc(\..*)?|AppKit|WebKit|Foundation)$')
-BANNED_FILES = re.compile(r'(?i)(^|[\\/])(tests|win_pages)[\\/]|\.ps1$|\.mjs$|win_suite|(^|[\\/])(remote_storage|shell_macos|lastbook_launcher)\b|vendor-macos|[\\/]webview[\\/](?!.*WebView2)')
+BANNED_FILES = re.compile(r'(?i)(^|[\\/])(tests|win_pages)[\\/]|\.ps1$|\.mjs$|win_suite|(^|[\\/])(remote_storage|shell_macos|update_macos|lastbook_launcher)\b|vendor-macos|[\\/]webview[\\/](?!.*WebView2)')
 THIRD_PARTY_TESTS = re.compile(r'(^|\.)(tests?|testing|conftest)(\.|$)')
 USER_PATHS = re.compile(rb'(?i)[a-z]:[\\/]+users[\\/]+[a-z0-9_.-]+|/Users/[A-Za-z0-9_.-]+|/home/[a-z0-9_.-]+|/Volumes/[A-Za-z0-9_.-]+|/private/tmp')
 ADDRESSES = re.compile(rb'\b(?:192\.168|10\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b|\b100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b')
@@ -250,7 +250,7 @@ def main():
     for rel in need:
         if not (root / rel).is_file():
             scan.fails.append(f'missing from the package: {rel}')
-    for mod in ('main', 'server', 'bridge', 'shell_windows', 'engine.library', 'llm_local', 'engine.setup.api', 'engine.setup.download', 'clr'):
+    for mod in ('main', 'server', 'bridge', 'ui_language', 'shell_windows', 'engine.library', 'llm_local', 'engine.setup.api', 'engine.setup.download', 'clr'):
         if mod not in scan.modules and not any(n.endswith(f'exe:{mod}') for n in scan.notes):
             if mod != 'main':
                 scan.fails.append(f'module missing from the package: {mod}')

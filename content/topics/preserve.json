@@ -24,6 +24,8 @@
   "pickling",
   "pickles",
   "fermenting",
+  "fermentation",
+  "kombucha",
   "sauerkraut",
   "food storage"
  ],
@@ -68,7 +70,7 @@
   {
    "id": "jarcheck",
    "label": "Is this jar safe to eat?",
-   "hint": "Bulging lid, leaking, odd smell, unsure how it was canned",
+   "hint": "Bulging lid, leaking, odd smell, spoilage, unsure how it was canned",
    "read": [
     {
      "doc": "31a7235cab119ccb",

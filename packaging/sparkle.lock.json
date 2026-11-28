@@ -1,0 +1,6 @@
+{
+  "comment": "Sparkle 2 for Update now (app/update_macos.py). Official release https://github.com/sparkle-project/Sparkle/releases/tag/2.10.1, SHA-256 checked against the GitHub asset metadata and the downloaded bytes (2026-11-22). Needs 2.9 or later (SURequireSignedFeed).",
+  "version": "2.10.1",
+  "archive": "Sparkle-{version}.tar.xz",
+  "sha256": "1a856d2a9edb8e628de88121d7be04cf0e2167f8641650b78fca00b14244cf27"
+}

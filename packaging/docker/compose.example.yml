@@ -1,0 +1,24 @@
+# docker compose -f packaging/docker/compose.example.yml up -d   (from the top of the repository)
+services:
+  lastbook:
+    build:
+      context: ../..
+      dockerfile: packaging/docker/Dockerfile
+    image: lastbook:local
+    container_name: lastbook
+    restart: unless-stopped
+    user: "1000:1000"            # the owner of the folder below
+    ports:
+      - "8890:8890"
+    volumes:
+      # Room for the pack twice while it installs: its zip and the unpacked library.
+      - /path/to/lastbook:/data
+    environment:
+      - LASTBOOK_PACK=small      # small, medium or all
+      # - LASTBOOK_MAP=TX        # a state's detailed map (Small has the base map only)
+      # - LASTBOOK_LAN_KEY=...   # a fixed access key, so saved links keep working after a reinstall
+      # Chat, with a model server elsewhere (Ollama here). The assistant only talks to loopback, so the
+      # entrypoint forwards 127.0.0.1:11434 inside the container to MODEL_UPSTREAM.
+      # - MODEL_UPSTREAM=ollama:11434
+      # - SURVIVAL_MODEL_BASE=http://127.0.0.1:11434
+      # - SURVIVAL_MODEL=gemma4:12b

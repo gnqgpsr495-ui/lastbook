@@ -33,8 +33,8 @@
  },
  "hurt": {
   "missing": [
-   "No simple mass-casualty triage method (such as START) written for the public.",
-   "No stand-alone psychological first aid guide.",
+   "No simple mass-casualty triage method (such as START) written for the public. The medical encyclopedia’s START article (under Go deeper) explains it, but is written for responders.",
+   "No stand-alone psychological first aid guide. The medical encyclopedia has an overview article (under Go deeper), but not a guide to follow.",
    "No agency videos on carbon monoxide or burns.",
    "“New Where There Is No Doctor” is incomplete here: some chapters listed in its contents (mental health, older people, disasters, medicines) were not available."
   ],
@@ -52,7 +52,7 @@
  },
  "shelter": {
   "missing": [
-   "No EPA or CDC wildfire smoke health guide and no Air Quality Index explainer.",
+   "No EPA or CDC wildfire smoke health guide. The medical encyclopedia’s Air quality index article (under Go deeper) explains the numbers, but there is no agency explainer.",
    "Most outdoor-shelter videos are hobbyist channels without captions.",
    "No city guidance on cooling centers or on heat in apartments without air conditioning."
   ],
@@ -71,7 +71,8 @@
  },
  "energy": {
   "missing": [
-   "Micro-hydro and wind material is mostly old or utility-scale."
+   "Micro-hydro and wind material is mostly old or utility-scale.",
+   "No official, beginner-level guide to pedal power or to charging a battery from it safely. The two Appropedia build guides (route step 7) are community-written and leave out battery gas and ventilation."
   ]
  },
  "comms": {

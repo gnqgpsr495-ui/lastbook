@@ -9,6 +9,7 @@ so it is reported and allowed there alone.
 """
 import argparse
 import json
+import plistlib
 import re
 import subprocess
 import sys
@@ -17,6 +18,9 @@ import zipfile
 from pathlib import Path
 
 from PyInstaller.archive.readers import CArchiveReader
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'app'))
+import update_macos   # noqa: E402  Update now's own rules for Info.plist: the scan and the app refuse the same builds
 
 BAD_SEGMENTS = {'test', 'tests', 'testing', 'pytest', 'unittest', 'doctest', 'PyObjCTest', 'remote_storage', 'webview', 'bottle', 'proxy_tools',
                 'onnxruntime', 'tokenizers', 'shell_windows', 'clr', 'clr_loader', 'pythonnet', 'lastbook_launcher', 'tkinter', 'PyInstaller',
@@ -29,7 +33,7 @@ SYSTEM = ('/usr/lib/', '/System/', '@rpath/', '@loader_path/', '@executable_path
 USER_PATH = re.compile(rb'/Users/[A-Za-z0-9._-]+')
 SHIP = json.loads((Path(__file__).resolve().with_name('ship_edits.json')).read_text(encoding='utf-8'))
 HOUSEHOLD = re.compile('|'.join(SHIP['forbidden']).encode(), re.I)
-FIRST_PARTY = re.compile(r'(^|/)(web|content)/|^(main|server|retrieval|assistant|llm_local|bridge|shell_macos|engine(\.\w+)?)$')
+FIRST_PARTY = re.compile(r'(^|/)(web|content)/|^(main|server|retrieval|assistant|llm_local|bridge|contribute|ui_language|shell_macos|update_macos|engine(\.\w+)?)$')
 NETWORK = re.compile(r'^_(socket|connect|bind|listen|accept|getaddrinfo|gethostbyname|sendto|recvfrom)$|CFNetwork|CFSocket|CFStream|NSURLSession|NSURLConnection|NSStream|^_nw_')
 
 
@@ -45,6 +49,26 @@ def numbers(code):
                 walk(k)
     walk(code)
     return ', '.join(out).encode()
+
+
+def sparkle_problems(app):
+    """Update now is all or nothing: Sparkle.framework with every Info.plist value update_macos.py requires, or no SU* key at all."""
+    with open(app / 'Contents' / 'Info.plist', 'rb') as f:
+        info = plistlib.load(f)
+    fw = app / 'Contents' / 'Frameworks' / 'Sparkle.framework'
+    keys = sorted(k for k in info if k.startswith('SU'))
+    print(f'Update now: {"Sparkle.framework, " + ", ".join(keys) if fw.exists() else "off (download page)"}')
+    if not fw.exists():
+        return [f'Sparkle Info.plist keys without Sparkle.framework: {keys}'] if keys else []
+    out = []
+    why = update_macos.problem(info, app)
+    if why:
+        out.append(f'Sparkle.framework present but {why}')
+    if any(fw.rglob('*.xpc')):
+        out.append('Sparkle XPC services in the package: Lastbook is not sandboxed and does not use them')
+    if not (app / 'Contents' / 'Resources' / 'LICENSE-Sparkle.txt').is_file():
+        out.append('Sparkle.framework present without its license (Contents/Resources/LICENSE-Sparkle.txt)')
+    return out
 
 
 def bad_name(name):
@@ -115,9 +139,11 @@ def main():
                         problems.append(f'module not allowed: {rel}!{name}')
                     scan_bytes(f'{rel}!{name}', z.read(name))
     pkg = CArchiveReader(str(executable))
+    modules = set()
     for name, entry in pkg.toc.items():
         if entry[-1] == 'z':
             pyz = pkg.open_embedded_archive(name)
+            modules.update(pyz.toc)
             for mod in pyz.toc:
                 n_mods += 1
                 if bad_name(mod):
@@ -137,6 +163,9 @@ def main():
     roots = [a.app / 'Contents' / d / 'engine' / 'setup' / 'roots.pem' for d in ('Resources', 'Frameworks')]
     if not any(r.is_file() for r in roots):    # setup's downloader trusts only these roots; without them it downloads nothing
         problems.append('missing from the package: engine/setup/roots.pem')
+    problems += sparkle_problems(a.app)
+    if 'ui_language' not in modules:
+        problems.append('missing module from the package: ui_language')
     print(f'files {n_files}, native binaries {n_macho}, modules looked inside {n_mods}')
     print(f'remote_storage string: {remote_hits or "nowhere"} (the module itself is refused above)')
     print(f'/Users/... strings: { {u: w[:3] for u, w in user_paths.items()} or "none"}')

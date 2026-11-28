@@ -3,7 +3,7 @@
 Every request for https://lastbook.invalid goes to bridge.py through WebResourceRequested; that host never resolves anywhere else.
 On purpose absent: AddHostObjectToScript, WebMessageReceived, PostWebMessage. IsWebMessageEnabled and AreHostObjectsAllowed are off too.
 
-One window. A new-window request is always cancelled; what happens instead comes from Bridge.new_window. Nothing is ever handed to a browser or another program.
+One window. A new-window request is always cancelled; what happens instead comes from Bridge.new_window. Only the explicit Contribute action opens the project repository in the system browser.
 Frames show library content only (Bridge.frame_url_ok) and the top level shows the app's own page only (Bridge.top_url_ok).
 Nothing is saved to disk without the person choosing where, and a page's memory has a limit (MEMORY_LIMIT).
 The runtime's crash reports stay on this computer (IsCustomCrashReportingEnabled), and its right-click menu keeps only editing (MENU_KEEP): the rest of that menu can reach other programs.
@@ -19,6 +19,7 @@ import traceback
 from pathlib import Path
 
 import bridge as B
+from contribute import launch_project_repository
 
 # Audit W6: in the packaged app, nothing outside may steer WebView2 or pythonnet. WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS could open a
 # debugging port on this no-port app, WEBVIEW2_BROWSER_EXECUTABLE_FOLDER could swap the runtime, PYTHONNET_* the .NET runtime.
@@ -698,7 +699,7 @@ class Pace:
 
 
 class Shell:
-    def __init__(self, server_module, data):
+    def __init__(self, server_module, data, *, language_file=None):
         self.n = net()
         spool = Path(data) / 'derived' / 'spool'
         spool.mkdir(parents=True, exist_ok=True)
@@ -710,7 +711,8 @@ class Shell:
                 pass
         self.store = Path(data) / 'derived' / 'webview'
         physical = _Processes().physical() or 2 * WHOLE_COPIES * B.WHOLE_MAX
-        self.b = B.Bridge(server_module, 'buffer', B.ORIGIN_WINDOWS, tmpdir=str(spool), whole_max=min(B.WHOLE_MAX, physical // (2 * WHOLE_COPIES)))
+        self.b = B.Bridge(server_module, 'buffer', B.ORIGIN_WINDOWS, tmpdir=str(spool),
+                          whole_max=min(B.WHOLE_MAX, physical // (2 * WHOLE_COPIES)), language_file=language_file)
         self.core = self.env = self.form = self.view = None
         self.frames = set()     # pythonnet would let these go otherwise, and with them the frame's event
         self.pace = Pace(PACE_BYTES)
@@ -987,7 +989,9 @@ class Shell:
     # ---- what may go where
     def act(self, what, where):
         note(kind='act', what=what, where=(where or '')[:300])
-        if what == 'inside':
+        if what == 'contribute':
+            self.ui(launch_project_repository)
+        elif what == 'inside':
             self.ui(lambda: self.core.Navigate(where))
 
     def on_nav(self, sender, args):
@@ -1036,7 +1040,7 @@ class Shell:
         from_top = source is not None and source.FrameKind == self.n.Core.CoreWebView2FrameKind.MainFrame
         gesture = bool(args.IsUserInitiated)
         note(kind='new-window', uri=uri[:300], from_top=from_top, user=gesture)
-        self.act(*self.b.new_window(uri, from_top, gesture))
+        self.act(*self.b.new_window(uri, from_top, gesture, popup=True))
 
     def on_permission(self, sender, args):
         Core = self.n.Core
@@ -1203,10 +1207,10 @@ def collect_loop(GC):
             limit = max(HEAP_SOFT, GC.GetTotalMemory(False) * 2)
 
 
-def run(server_module, data):
+def run(server_module, data, *, language_file=None):
     """Blocks until the window closes. WinForms and WebView2 need a single-threaded apartment, which Python's main thread is not."""
     ctypes.windll.user32.SetProcessDPIAware()
-    shell = Shell(server_module, data)
+    shell = Shell(server_module, data, language_file=language_file)
     failure = []
 
     def body():

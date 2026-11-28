@@ -40,6 +40,7 @@
   "power outage",
   "wildfire",
   "smoke",
+  "ash",
   "air quality",
   "AQHI",
   "smog",
@@ -68,7 +69,7 @@
   {
    "id": "heat",
    "label": "It's dangerously hot and the power or AC is out",
-   "hint": "Heat wave, no air conditioning, older people or babies at home",
+   "hint": "Heat wave, no air conditioning or aircon, older people or babies at home",
    "read": [
     {
      "doc": "1c0d7a149286b5",
@@ -153,7 +154,7 @@
   {
    "id": "co",
    "label": "Using a generator, heater, grill or stove for power or heat",
-   "hint": "Power outage, space heater, camp stove, headache or dizziness indoors",
+   "hint": "Power outage, space heater, kerosene or paraffin heater, camp stove, headache or dizziness indoors, carbon monoxide",
    "read": [
     {
      "doc": "18bf4604bf28c4",
@@ -436,6 +437,12 @@
    "title": "Hypothermia",
    "label": "Encyclopedia: Hypothermia (MDWiki)",
    "note": "Medical encyclopedia article on causes, stages and prevention of dangerous cold."
+  },
+  {
+   "zim": "zim/mdwiki_en_all_maxi_2025-11.zim/Air_quality_index",
+   "title": "Air quality index",
+   "label": "Encyclopedia: Air quality index (MDWiki)",
+   "note": "What air quality index numbers and colors mean, how they differ by country, and the advice that comes with high readings, such as for older people and children."
   }
  ],
  "related": [

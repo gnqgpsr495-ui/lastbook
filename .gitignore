@@ -6,6 +6,7 @@
 !/derived/packs/pack-spec.json
 __pycache__/
 *.pyc
+.venv
 .DS_Store
 .vercel/
 .env*

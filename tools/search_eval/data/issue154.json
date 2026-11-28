@@ -1,0 +1,446 @@
+{
+ "note": "Issue #154's 32 questions (check_search_tiers.py), each with one typo version, labelled blind. pat154 is #154's own topic regex, for its useful-of-8 count (32 x 8 = 256 possible).",
+ "cases": [
+  {
+   "group": "injury+phrase",
+   "q": "burned my hand trying to light a fire",
+   "typo": "burnd my hand tryng to lite a fire",
+   "pat154": "burn|scald",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "i burnt my fingers lighting the campfire",
+   "typo": "i brunt my fingrs lighting the campfier",
+   "pat154": "burn|scald",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "smoke inhalation from lighting a fire indoors",
+   "typo": "smoke inhalaton from lightin a fire inside",
+   "pat154": "smoke|inhal|carbon monoxide",
+   "colour": "red",
+   "need": [
+    "SMOKEINH",
+    "CO"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "carbon monoxide from making a fire in the tent",
+   "typo": "carbon monoxid from making a fire in the tnet",
+   "pat154": "carbon monoxide|\\bco\\b poison|monoxide",
+   "colour": "red",
+   "need": [
+    "CO"
+   ],
+   "context": [
+    "C_FIREMAKE",
+    "C_TENT"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "my clothes caught fire while starting the fire",
+   "typo": "my cloths cought fire wile starting the fire",
+   "pat154": "burn|stop,? drop|roll|clothing (on|catch)",
+   "colour": "red",
+   "need": [
+    "CLOTHES",
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "my kid fell into the fire while we were making a fire",
+   "typo": "my kid fel into the fire wile we were makin a fire",
+   "pat154": "burn|scald",
+   "colour": "red",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "treat water in the lungs after drowning",
+   "typo": "treat watter in the lungs after drownin",
+   "pat154": "drown|resuscitat|rescue breath|cpr|near-drown",
+   "colour": "red",
+   "need": [
+    "DROWN",
+    "CPR"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "how do i treat water blisters on a burn",
+   "typo": "how do i treat water blisers on a burn",
+   "pat154": "blister|burn",
+   "colour": "yellow",
+   "need": [
+    "BURN",
+    "BLISTER"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "how do i treat water poisoning",
+   "typo": "how do i treat water posioning",
+   "pat154": "poison|diarrh|contaminat|dehydrat|rehydrat|water-?borne",
+   "colour": "yellow",
+   "need": [
+    "POISON",
+    "DIARR"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "injury+phrase",
+   "q": "light a fire to keep him warm with hypothermia",
+   "typo": "lite a fire to keep him warm with hypothrmia",
+   "pat154": "hypotherm|rewarm|cold injur",
+   "colour": "red",
+   "need": [
+    "HYPOTHERM"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "my son nearly drowned in the rainwater pool",
+   "typo": "my sun neary drowned in the rainwater pool",
+   "pat154": "drown|resuscitat|rescue breath|cpr",
+   "colour": "red",
+   "need": [
+    "DROWN",
+    "CPR"
+   ],
+   "context": [
+    "C_POOL"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "someone fell in the rainwater pool and isn't breathing",
+   "typo": "somone fell in the rainwater pool and isnt breathing",
+   "pat154": "drown|resuscitat|rescue breath|cpr|not breathing|breathing",
+   "colour": "red",
+   "need": [
+    "CPR",
+    "DROWN"
+   ],
+   "context": [
+    "C_POOL"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "he swallowed pool water and now he's coughing",
+   "typo": "he swalowed pool water and now hes coughing",
+   "pat154": "drown|cough|aspirat|breath",
+   "colour": "yellow",
+   "need": [
+    "DROWN"
+   ],
+   "context": [
+    "C_POOL"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "drank creek water and now i have diarrhea",
+   "typo": "drank creek water now i have diarea",
+   "pat154": "diarrh|rehydrat|dehydrat",
+   "colour": "yellow",
+   "need": [
+    "DIARR"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "my child swallowed lamp oil",
+   "typo": "my kid swallowd lamp oyl",
+   "pat154": "poison|kerosene|paraffin|petroleum|swallow",
+   "colour": "red",
+   "need": [
+    "HYDROCARB"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "scorpion sting on my foot",
+   "typo": "scorpian sting on my foot",
+   "pat154": "scorpion|sting",
+   "colour": "yellow",
+   "need": [
+    "SCORPION"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "rash from poison ivy",
+   "typo": "rash from posion ivy",
+   "pat154": "poison ivy|poison oak|rash|urushiol",
+   "colour": "yellow",
+   "need": [
+    "RASH"
+   ],
+   "context": [],
+   "not_first": [
+    "POISON"
+   ]
+  },
+  {
+   "group": "injury",
+   "q": "snake bite while camping",
+   "typo": "snak bite while campin",
+   "pat154": "snake|bite|venom",
+   "colour": "red",
+   "need": [
+    "SNAKE"
+   ],
+   "context": [
+    "C_TENT"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "hypothermia after falling in cold water",
+   "typo": "hypothermia after faling in cold watr",
+   "pat154": "hypotherm|rewarm|cold water",
+   "colour": "red",
+   "need": [
+    "HYPOTHERM"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "someone got shocked by a wire in the flood water",
+   "typo": "somone got shoked by a wire in the flood watter",
+   "pat154": "electric|shock|electrocut",
+   "colour": "red",
+   "need": [
+    "ELEC",
+    "CPR"
+   ],
+   "context": [
+    "C_FLOOD"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "is it safe to put water on a burn",
+   "typo": "is it safe to put watr on a burn",
+   "pat154": "burn|scald",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "i burned my hand on the camp stove",
+   "typo": "i burnt my hand on the camp stov",
+   "pat154": "burn|scald",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_TENT"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "injury",
+   "q": "how do i treat a burn from a campfire",
+   "typo": "how do i treat a burn from a camp fier",
+   "pat154": "burn|scald",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": []
+  },
+  {
+   "group": "how-to",
+   "q": "how do i light a campfire",
+   "typo": "how do i light a campfrie",
+   "pat154": "tinder|kindling|firecraft|fire ?start|bow drill|flint|ferro|friction|fire[- ]making|lighting a fire|starting a fire",
+   "colour": "green",
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ]
+  },
+  {
+   "group": "how-to",
+   "q": "i need to start a fire but i have no matches and no gas",
+   "typo": "i need to start a fire but no matchs and no gas",
+   "pat154": "tinder|kindling|firecraft|fire ?start|bow drill|flint|ferro|friction|fire[- ]making|lighting a fire|starting a fire",
+   "colour": "green",
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [
+    "GASLEAK"
+   ]
+  },
+  {
+   "group": "how-to",
+   "q": "how do i make the water safe to drink",
+   "typo": "how do i make the water safe to drik",
+   "pat154": "disinfect|purif|chlorin|bleach|boil(ing)? water|treat(ing|ment)? water|safe water|drinking water",
+   "colour": "green",
+   "need": [
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "how-to",
+   "q": "how do i purify water from a creek",
+   "typo": "how do i purfy water from a creek",
+   "pat154": "disinfect|purif|chlorin|bleach|boil(ing)? water|treat(ing|ment)? water|safe water|drinking water",
+   "colour": "green",
+   "need": [
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "how-to",
+   "q": "how to make the water safe for a baby's formula",
+   "typo": "how to make the water safe for babys formla",
+   "pat154": "disinfect|purif|chlorin|bleach|boil(ing)? water|treat(ing|ment)? water|safe water|drinking water|formula",
+   "colour": "green",
+   "need": [
+    "PURIFY",
+    "FORMULA"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "safety",
+   "q": "make a fire escape plan for my family",
+   "typo": "make a fire escape plan for my famly",
+   "pat154": "escape|evacuat|exit|smoke alarm|fire safety",
+   "colour": "green",
+   "need": [
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ]
+  },
+  {
+   "group": "safety",
+   "q": "what could make a fire spread faster",
+   "typo": "what could make a fire spred faster",
+   "pat154": "spread|fire safety|flammab|prevent",
+   "colour": "green",
+   "need": [
+    "FIRESPREAD"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ]
+  },
+  {
+   "group": "safety",
+   "q": "pour water on a grease fire",
+   "typo": "pour watter on a greese fire",
+   "pat154": "grease|kitchen fire|cooking fire|smother|extinguish",
+   "colour": "red",
+   "need": [
+    "GREASE"
+   ],
+   "context": [],
+   "not_first": []
+  },
+  {
+   "group": "safety",
+   "q": "how do i treat water damage on the floor",
+   "typo": "how do i treat water damge on the floor",
+   "pat154": "flood|water damage|mold|mould|dry(ing)? out",
+   "colour": "green",
+   "need": [
+    "WATERDAMAGE"
+   ],
+   "context": [],
+   "not_first": [
+    "C_WATERTREAT",
+    "POISON"
+   ]
+  }
+ ]
+}

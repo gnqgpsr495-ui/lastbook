@@ -319,6 +319,30 @@
      "note": "Manufacturer video of routine maintenance on one model; no transcript."
     }
    ]
+  },
+  {
+   "title": "Step 7: Pedal power from a bicycle (advanced, optional)",
+   "goal": "See how a bicycle and a salvaged motor can charge a 12 V battery when there is no fuel or sun, and what these community build guides leave out.",
+   "read": [
+    {
+     "doc": "47e8a442a2b343f0",
+     "page": 13,
+     "label": "Read first: a charging battery gives off explosive gas",
+     "note": "Bureau of Reclamation 2020 battery manual: every storage battery on charge gives off hydrogen, so no sparks near it and no breaking a connection while current flows. Neither build guide below covers this."
+    },
+    {
+     "zim": "zim/appropedia_en_all_maxi_2026-02.zim/SHTF_Pedal_Generator",
+     "title": "SHTF Pedal Generator",
+     "label": "Appropedia: pedal generator from a wiper motor and a scrap bike",
+     "note": "Community build log (2023, CC BY-SA 4.0): a 12 V windshield-wiper motor, a bridge rectifier and a 13.8 V regulator charge a car battery, with a USB step-down for phones. It names specific online modules but says it can be built without them, carefully."
+    },
+    {
+     "zim": "zim/appropedia_en_all_maxi_2026-02.zim/Bicycle_generator:_The_ultimate_DIY_guide_(With_examples!)",
+     "title": "Bicycle generator: The ultimate DIY guide (With examples!)",
+     "label": "Appropedia: bicycle generator build guide (CCAT)",
+     "note": "Cal Poly Humboldt CCAT's step-by-step guide: bike stand, belt and pulley, generator, diode, fuse, battery and inverter. Community-written, so check each part against your own battery's and inverter's manuals."
+    }
+   ]
   }
  ],
  "related": [

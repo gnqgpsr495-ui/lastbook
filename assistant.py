@@ -11,15 +11,7 @@ from engine.paths import ro_uri
 from engine import page_tables
 
 import os
-LOOPBACK = re.compile(r'http://(127\.0\.0\.1|\[::1\]):\d+(/[^\s]*)?')
-
-
-def loopback_base(value):
-    """The model server's address, or ValueError for anything off this computer. 'localhost' becomes 127.0.0.1: a hosts file could point the name anywhere."""
-    base = re.sub(r'^http://localhost:', 'http://127.0.0.1:', value.rstrip('/'))
-    if not re.fullmatch(r'http://(127\.0\.0\.1|\[::1\]):\d+', base):
-        raise ValueError('not a loopback http address')
-    return base
+from engine.model_server import LOOPBACK, loopback_base, model_open   # noqa: F401  (LOOPBACK and model_open: also used by the tests)
 
 
 try:
@@ -29,6 +21,8 @@ except ValueError:
 MODEL_URL = BASE + '/v1/chat/completions'
 MODELS_URL = BASE + '/v1/models'
 MODEL = os.environ.get('SURVIVAL_MODEL', 'deepseek-v4.1-flash')
+STARTED_WITH = (BASE, MODEL)
+CHOSEN = False  # True while a model server the person chose in Setup answers, instead of Lastbook's own local AI (#78)
 # Some servers' thinking models (Ollama's gemma4) spend a whole round's tokens thinking at 'low'; 'none' answers straight away.
 REASONING_EFFORT = os.environ.get('SURVIVAL_REASONING_EFFORT', 'low')
 MAX_ROUNDS = 2  # tool rounds; then the model must answer with what it has
@@ -49,23 +43,18 @@ def init(server_module, index):
 
 
 def local_on():
-    return LOCAL is not None and LOCAL.available()
+    return not CHOSEN and LOCAL is not None and LOCAL.available()
 
 
-class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, *a, **k):
-        return None     # the answer comes back as an error instead of being followed: a redirect could lead off this computer
-
-
-_opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), _NoRedirect)    # ProxyHandler({}): a proxy set on this computer would carry the conversation out
-
-
-def model_open(req, timeout):
-    """The only way out of this program to a model, and it goes no further than this computer."""
-    url = req if isinstance(req, str) else req.full_url
-    if not LOOPBACK.fullmatch(url):
-        raise urllib.error.URLError('not a loopback address')
-    return _opener.open(req, timeout=timeout)
+def use_server(base, model):
+    """Answer with the model server the person chose in Setup (base, model), or None, None to go back to Lastbook's own."""
+    global BASE, MODEL_URL, MODELS_URL, MODEL, CHOSEN
+    chosen = bool(base and model)
+    BASE, MODEL = (loopback_base(base), model) if chosen else STARTED_WITH
+    MODEL_URL, MODELS_URL, CHOSEN = BASE + '/v1/chat/completions', BASE + '/v1/models', chosen
+    _status['at'] = 0     # asked again on the next status, not up to 15 s later
+    if chosen and LOCAL is not None:
+        LOCAL.stop('a model server was chosen')     # its memory is given back; the file stays
 
 
 # ------------------------------------------------------------------ status --
@@ -85,6 +74,9 @@ def model_status():
         except Exception as e:
             _status.update(online=False, error=type(e).__name__)
         _status['at'] = time.time()
+    if CHOSEN:    # the person's own server: its name, and text only, since few local models read images
+        return {'model': MODEL, 'online': _status['online'], 'error': _status['error'], 'local': None, 'vision': False,
+                'server': {'address': BASE[len('http://'):], 'model': MODEL}, 'index': dict(INDEX.status) if INDEX else {'state': 'off'}}
     return {'model': MODEL, 'online': _status['online'], 'error': _status['error'], 'local': local, 'vision': True,
             'index': dict(INDEX.status) if INDEX else {'state': 'off'}}
 
@@ -237,7 +229,9 @@ def source_known(s):
         r = S.catalog()['by_id'].get(s['doc_id']) if S is not None else None
         if not r:
             return False
-        if s.get('page') and r.get('pages') and not 1 <= s['page'] <= r['pages']:
+        page = s.get('page')
+        if page is not None and (not isinstance(page, int) or isinstance(page, bool) or page < 1
+                                 or (r.get('pages') and page > r['pages'])):
             return False
         return True
     return False
@@ -364,8 +358,10 @@ def run_tool(name, args, sess, extra_msgs, root=None):
         pages = [int(p) for p in (args.get('pages') or [1])][:3]
         pub = S.public(r)
         out = []
+        if not texts:
+            return '(no text in this document — it may be scanned pictures; use view_page for a PDF)', {'doc_id': d, 'title': pub['title'], 'pages': pages}
         for p in pages:
-            if not 1 <= p <= max(1, len(texts)):
+            if not 1 <= p <= len(texts):
                 out.append(f'(page {p} does not exist; the document has {len(texts)} pages)')
                 continue
             body = page_body(texts[p - 1], 3500) or '(no text on this page — it may be a picture; use view_page)'
@@ -661,9 +657,10 @@ def chat(messages, about, emit, cancelled):
             state[0] = s
             emit({'type': 'state', 'state': s})
     local = local_on()
-    tools = [t for t in TOOLS if t['function']['name'] != 'view_page'] if local else TOOLS   # the local model reads text only
-    if local:
+    tools = [t for t in TOOLS if t['function']['name'] != 'view_page'] if local or CHOSEN else TOOLS   # the local model reads text only
+    if local or CHOSEN:
         msgs[0] = {'role': 'system', 'content': SYSTEM_TEXT_ONLY}
+    if local:
         set_state('starting')
         shown = [None]
 

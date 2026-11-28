@@ -1,0 +1,692 @@
+{
+  "about": "Proposed region definition for a detailed map of Bolivia, as one region for the whole country, with the nine departments listed as an alternative. A proposal for discussion (docs/REGIONS-BO.md); no code reads this file, and it does not ship.",
+  "status": "proposal",
+  "checked": "2026-11-21/2026-11-22",
+  "codes": {
+    "proposal": "BO for the whole country.",
+    "why": "A bare BO collides with no US code in STATE_CODES (engine/address_search.py).",
+    "alternative": "ISO 3166-2:BO, one letter after the hyphen: BO-H, BO-L, BO-C, BO-O, BO-P, BO-T, BO-S, BO-B, BO-N.",
+    "warning": "OCHA COD-AB p-codes BO01-BO09 follow a different order from the ISO letters (BO01 is Chuquisaca, BO-H; BO02 is La Paz, BO-L). Join by name, not by position.",
+    "verified": "Not checked against the ISO site (iso.org/obp returned HTTP 403). The same nine codes were read in four other sources on 2026-11-21: Debian iso-codes 4.16.0 (iso_3166-2.json); the UN/LOCODE subdivision list via the datasets/un-locode mirror (data/subdivision-codes.csv, refreshed 2026-10-16); Natural Earth 5.1.1 admin-1 (iso_3166_2); geoBoundaries BOL ADM1 (shapeISO).",
+    "names": "Debian, UN/LOCODE and Natural Earth name BO-B \"El Beni\"; geoBoundaries and OCHA COD-AB say \"Beni\"."
+  },
+  "regions": [
+    {
+      "code": "BO",
+      "name": "Bolivia",
+      "country": "Bolivia",
+      "level": "country",
+      "area_km2": 1081700,
+      "box": {
+        "west": -69.6452,
+        "south": -22.9066,
+        "east": -57.4544,
+        "north": -9.6696
+      },
+      "box_with_margin_0_15": {
+        "west": -69.8,
+        "south": -23.06,
+        "east": -57.3,
+        "north": -9.51
+      },
+      "box_source": {
+        "dataset": "OCHA COD-AB Bolivia (bol_admin0.geojson / bol_admin1.geojson from bol_admin_boundaries.geojson.zip), source Ministerio de Desarrollo Rural y Tierras, version v02, valid_on 2024-09-16, files last modified 2026-05-13",
+        "url": "https://data.humdata.org/dataset/cod-ab-bol",
+        "licence": "CC-BY-IGO",
+        "computed": "2026-11-21",
+        "rule": "Extent of every vertex, minus/plus 0.15 degrees (the margin of map_sets.state in derived/packs/pack-spec.json), rounded outward to 0.01 degrees (floor for west and south, ceiling for east and north)."
+      },
+      "area_source": "area_sqkm attribute of COD-AB level 0",
+      "area_note": "The official figure is usually given as 1,098,581 km2 (general knowledge); the difference was not investigated.",
+      "clip": "Geofabrik's extract is cut a few kilometres outside the border, so a first build holds almost nothing of the neighbours and cuts the twin towns (general knowledge: Desaguadero, Puerto Quijarro/Corumbá, Guayaramerín/Guajará-Mirim, Cobija/Brasiléia, Villazón/La Quiaca, Yacuiba/Salvador Mazza). Suggested: the border as the edge of a first build; a band later. Undecided.",
+      "geofabrik_poly_box": {
+        "west": -69.6568,
+        "south": -22.9255,
+        "east": -57.4348,
+        "north": -9.6387,
+        "vertices": 161,
+        "verified": "opened and computed 2026-11-21"
+      },
+      "neighbours_in_box": {
+        "method": "Share of the box with margin, sampled on a 0.02 degree grid against Natural Earth 5.1.1 10 m admin-1 polygons (computed 2026-11-21). Shares of the box, not of km2; approximate.",
+        "share_bolivia_pct": 54.5,
+        "share_by_country_pct": {
+          "BRA": 26.8,
+          "PRY": 9.4,
+          "CHL": 4.1,
+          "ARG": 2.6,
+          "PER": 2.5
+        },
+        "foreign_units_pct": {
+          "BRA:Mato Grosso": 13.7,
+          "BRA:Rondônia": 9.5,
+          "PRY:Alto Paraguay": 4.1,
+          "PRY:Boquerón": 4.0,
+          "BRA:Acre": 2.1,
+          "CHL:Antofagasta": 2.0,
+          "CHL:Tarapacá": 1.6,
+          "ARG:Salta": 1.5,
+          "PER:Puno": 1.5,
+          "BRA:Mato Grosso do Sul": 1.5,
+          "ARG:Jujuy": 1.0,
+          "PER:Madre de Dios": 1.0,
+          "PRY:Presidente Hayes": 1.0,
+          "CHL:Arica y Parinacota": 0.6
+        }
+      }
+    }
+  ],
+  "alternative_regions": {
+    "about": "If finer regions are wanted: the nine departments. Each large city lies inside its own department (general knowledge), so a department map would not cut a metropolitan area.",
+    "box_source": {
+      "dataset": "OCHA COD-AB Bolivia (bol_admin0.geojson / bol_admin1.geojson from bol_admin_boundaries.geojson.zip), source Ministerio de Desarrollo Rural y Tierras, version v02, valid_on 2024-09-16, files last modified 2026-05-13",
+      "url": "https://data.humdata.org/dataset/cod-ab-bol",
+      "licence": "CC-BY-IGO",
+      "computed": "2026-11-21",
+      "rule": "Extent of every vertex, minus/plus 0.15 degrees (the margin of map_sets.state in derived/packs/pack-spec.json), rounded outward to 0.01 degrees (floor for west and south, ceiling for east and north)."
+    },
+    "area_source": "area_sqkm attribute of COD-AB level 1",
+    "neighbours_method": "As for BO: 0.02 degree grid against Natural Earth 5.1.1 10 m admin-1. The Bolivian share includes other Bolivian departments.",
+    "regions": [
+      {
+        "code": "BO-H",
+        "cod_ab_pcode": "BO01",
+        "name": "Chuquisaca",
+        "level": "department",
+        "area_km2": 50945,
+        "polygon_parts": 1,
+        "box": {
+          "west": -65.6956,
+          "south": -21.5173,
+          "east": -62.1794,
+          "north": -18.347
+        },
+        "box_with_margin_0_15": {
+          "west": -65.85,
+          "south": -21.67,
+          "east": -62.02,
+          "north": -18.19
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 97.2,
+          "share_by_country_pct": {
+            "PRY": 2.8
+          },
+          "foreign_units_pct": {
+            "PRY:Boquerón": 2.8
+          }
+        }
+      },
+      {
+        "code": "BO-L",
+        "cod_ab_pcode": "BO02",
+        "name": "La Paz",
+        "level": "department",
+        "area_km2": 128255,
+        "polygon_parts": 27,
+        "box": {
+          "west": -69.6452,
+          "south": -18.0469,
+          "east": -66.7321,
+          "north": -11.8497
+        },
+        "box_with_margin_0_15": {
+          "west": -69.8,
+          "south": -18.2,
+          "east": -66.58,
+          "north": -11.69
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 79.5,
+          "share_by_country_pct": {
+            "PER": 19.0,
+            "CHL": 1.5
+          },
+          "foreign_units_pct": {
+            "PER:Puno": 12.1,
+            "PER:Madre de Dios": 6.5,
+            "CHL:Arica y Parinacota": 1.5
+          }
+        }
+      },
+      {
+        "code": "BO-C",
+        "cod_ab_pcode": "BO03",
+        "name": "Cochabamba",
+        "level": "department",
+        "area_km2": 54450,
+        "polygon_parts": 1,
+        "box": {
+          "west": -67.0057,
+          "south": -18.6818,
+          "east": -64.2341,
+          "north": -15.7799
+        },
+        "box_with_margin_0_15": {
+          "west": -67.16,
+          "south": -18.84,
+          "east": -64.08,
+          "north": -15.62
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 100.0,
+          "share_by_country_pct": {},
+          "foreign_units_pct": {}
+        }
+      },
+      {
+        "code": "BO-O",
+        "cod_ab_pcode": "BO04",
+        "name": "Oruro",
+        "level": "department",
+        "area_km2": 52194,
+        "polygon_parts": 2,
+        "box": {
+          "west": -69.1423,
+          "south": -19.8867,
+          "east": -66.0861,
+          "north": -17.3239
+        },
+        "box_with_margin_0_15": {
+          "west": -69.3,
+          "south": -20.04,
+          "east": -65.93,
+          "north": -17.17
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 90.2,
+          "share_by_country_pct": {
+            "CHL": 9.8
+          },
+          "foreign_units_pct": {
+            "CHL:Tarapacá": 7.0,
+            "CHL:Arica y Parinacota": 2.8
+          }
+        }
+      },
+      {
+        "code": "BO-P",
+        "cod_ab_pcode": "BO05",
+        "name": "Potosí",
+        "level": "department",
+        "area_km2": 119207,
+        "polygon_parts": 1,
+        "box": {
+          "west": -68.7739,
+          "south": -22.9066,
+          "east": -64.7144,
+          "north": -17.8071
+        },
+        "box_with_margin_0_15": {
+          "west": -68.93,
+          "south": -23.06,
+          "east": -64.56,
+          "north": -17.65
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 79.2,
+          "share_by_country_pct": {
+            "CHL": 10.9,
+            "ARG": 9.9
+          },
+          "foreign_units_pct": {
+            "CHL:Antofagasta": 8.1,
+            "ARG:Jujuy": 7.3,
+            "CHL:Tarapacá": 2.8,
+            "ARG:Salta": 2.7
+          }
+        }
+      },
+      {
+        "code": "BO-T",
+        "cod_ab_pcode": "BO06",
+        "name": "Tarija",
+        "level": "department",
+        "area_km2": 37259,
+        "polygon_parts": 1,
+        "box": {
+          "west": -65.4199,
+          "south": -22.8828,
+          "east": -62.2607,
+          "north": -20.8858
+        },
+        "box_with_margin_0_15": {
+          "west": -65.57,
+          "south": -23.04,
+          "east": -62.11,
+          "north": -20.73
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 56.1,
+          "share_by_country_pct": {
+            "ARG": 36.5,
+            "PRY": 7.4
+          },
+          "foreign_units_pct": {
+            "ARG:Salta": 31.4,
+            "PRY:Boquerón": 7.4,
+            "ARG:Jujuy": 3.7,
+            "ARG:Formosa": 1.3
+          }
+        }
+      },
+      {
+        "code": "BO-S",
+        "cod_ab_pcode": "BO07",
+        "name": "Santa Cruz",
+        "level": "department",
+        "area_km2": 368779,
+        "polygon_parts": 1,
+        "box": {
+          "west": -64.8424,
+          "south": -20.4732,
+          "east": -57.4544,
+          "north": -13.4757
+        },
+        "box_with_margin_0_15": {
+          "west": -65.0,
+          "south": -20.63,
+          "east": -57.3,
+          "north": -13.32
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 69.9,
+          "share_by_country_pct": {
+            "BRA": 22.0,
+            "PRY": 8.1
+          },
+          "foreign_units_pct": {
+            "BRA:Mato Grosso": 18.7,
+            "PRY:Alto Paraguay": 7.0,
+            "BRA:Mato Grosso do Sul": 2.8,
+            "PRY:Boquerón": 1.1,
+            "BRA:Rondônia": 0.6
+          }
+        }
+      },
+      {
+        "code": "BO-B",
+        "cod_ab_pcode": "BO08",
+        "name": "Beni (ISO: El Beni)",
+        "level": "department",
+        "area_km2": 206875,
+        "polygon_parts": 1,
+        "box": {
+          "west": -67.5622,
+          "south": -16.4917,
+          "east": -61.5279,
+          "north": -10.3812
+        },
+        "box_with_margin_0_15": {
+          "west": -67.72,
+          "south": -16.65,
+          "east": -61.37,
+          "north": -10.23
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 75.6,
+          "share_by_country_pct": {
+            "BRA": 24.4
+          },
+          "foreign_units_pct": {
+            "BRA:Rondônia": 23.9
+          }
+        }
+      },
+      {
+        "code": "BO-N",
+        "cod_ab_pcode": "BO09",
+        "name": "Pando",
+        "level": "department",
+        "area_km2": 63737,
+        "polygon_parts": 1,
+        "box": {
+          "west": -69.5747,
+          "south": -12.4984,
+          "east": -65.2868,
+          "north": -9.6696
+        },
+        "box_with_margin_0_15": {
+          "west": -69.73,
+          "south": -12.65,
+          "east": -65.13,
+          "north": -9.51
+        },
+        "neighbours_in_box": {
+          "share_bolivia_pct": 61.3,
+          "share_by_country_pct": {
+            "BRA": 31.3,
+            "PER": 7.4
+          },
+          "foreign_units_pct": {
+            "BRA:Acre": 24.2,
+            "PER:Madre de Dios": 7.4,
+            "BRA:Rondônia": 5.7,
+            "BRA:Amazonas": 1.4
+          }
+        }
+      }
+    ]
+  },
+  "cross_checks": {
+    "geoboundaries": {
+      "dataset": "geoBoundaries gbOpen BOL ADM0 and ADM1, source \"GeoBolivia, Derived from ADM3 layer\", year represented 2015, built 2023-12-12",
+      "url": "https://www.geoboundaries.org/api/current/gbOpen/BOL/ADM1/",
+      "licence": "geoBoundaries-PD",
+      "result": "Every box equals COD-AB to four decimals (unrounded extents differ by less than 0.000001 degrees). The files appear to share the same geometry (an inference from the match), so this is not an independent check.",
+      "verified": "downloaded and computed 2026-11-21"
+    },
+    "natural_earth": {
+      "dataset": "Natural Earth 5.1.1, 10 m admin-0 and admin-1",
+      "url": "https://www.naturalearthdata.com/",
+      "licence": "Public-domain-NE",
+      "result": "Largest edge difference from COD-AB: 0.0914 degrees (Tarija west, about 9.4 km); country box at most 0.0213 degrees (west). Every Natural Earth department box lies inside the COD-AB box with margin.",
+      "largest_edge_difference_km": {
+        "Chuquisaca": 3.3,
+        "La Paz": 6.1,
+        "Cochabamba": 8.9,
+        "Oruro": 8.5,
+        "Potosí": 5.3,
+        "Tarija": 9.4,
+        "Santa Cruz": 3.7,
+        "Beni": 7.1,
+        "Pando": 1.1
+      },
+      "verified": "downloaded and computed 2026-11-21"
+    },
+    "geofabrik_poly": {
+      "result": "Looser than COD-AB on all four sides, by 0.01 to 0.03 degrees.",
+      "verified": "opened and computed 2026-11-21"
+    }
+  },
+  "boundary_caveats": {
+    "water_holes": "COD-AB levels 2 and 3 leave seven water features as holes (among them Salar de Uyuni, Salar de Coipasa, Lago Titicaca, Lago Poopó, Lago Uru Uru); levels 0 and 1, used for the boxes, enclose them (HDX caveat, opened).",
+    "internal_limits": "Ley 339/2013 distinguishes \"límites precisos\" from \"límites imprecisos\" and sends demarcation to the IGM case by case (opened on Lexivox). Department lines are approximate in places; a box is only a cut for a download."
+  },
+  "layers": {
+    "base_map_and_poi": {
+      "dataset": "OSM extract bolivia-latest.osm.pbf (167 MB as Geofabrik shows it; bolivia-261120.osm.pbf is 175,175,057 bytes); -free.shp.zip 396 MB, -free.gpkg.zip 405 MB",
+      "publisher": "OpenStreetMap contributors via Geofabrik",
+      "url": "https://download.geofabrik.de/south-america/bolivia.html",
+      "licence": "ODbL-1.0",
+      "verified": "2026-11-21",
+      "data_up_to": "2026-11-20T21:21:21Z"
+    },
+    "places": {
+      "dataset": "OCHA COD-AB levels 1 to 3 (9 departments, 112 provinces, 339 municipalities) and adminpoints; OSM named places",
+      "url": "https://data.humdata.org/dataset/cod-ab-bol",
+      "licence": [
+        "CC-BY-IGO",
+        "ODbL-1.0"
+      ],
+      "verified": "HDX record opened 2026-11-21; unit counts computed from the GeoJSON"
+    },
+    "terrain": {
+      "dataset": "Copernicus DEM GLO-30",
+      "licence": "Copernicus-WorldDEM-30",
+      "verified": "as in docs/regions-proposed.json; Bolivian tiles not checked"
+    },
+    "water": {
+      "dataset": "OSM waterways and water areas",
+      "licence": "ODbL-1.0",
+      "gap": "No open dam inventory found."
+    },
+    "crops": {
+      "dataset": null,
+      "gap": "Not studied in this proposal."
+    },
+    "buildings": {
+      "dataset": "Google Open Buildings v3 (BOL in its country list, \"subject to change\"); Microsoft Global ML Building Footprints (238 Bolivia tiles in dataset-links.csv of 2026-11-12)",
+      "licence": [
+        "CC-BY-4.0",
+        "ODbL-1.0",
+        "CDLA-Permissive-2.0"
+      ],
+      "verified": "both pages opened 2026-11-21; coverage and quality not measured",
+      "notes": "Google: CC BY 4.0 or ODbL 1.0, at the user's choice. Microsoft: CDLA Permissive 2.0."
+    },
+    "addresses": {
+      "dataset": null,
+      "gap": "Overture's address theme (release 2026-11-18.0) lists 41 countries and Bolivia is not among them. OSM has 10,527 objects with addr:housenumber.",
+      "url": "https://docs.overturemaps.org/guides/addresses/",
+      "verified": "2026-11-21"
+    },
+    "hazards": {
+      "dataset": "SENAMHI alerts, flood extents, heat spots and drought monitor (senamhi.gob.bo)",
+      "licence": "SENAMHI-reserved",
+      "verified": "home page and three sub-pages opened 2026-11-21; data not read (JavaScript)",
+      "gap": "Defensa Civil (defensacivil.gob.bo) returned HTTP 403."
+    }
+  },
+  "osm_counts": {
+    "about": "Counted with pyosmium over bolivia-261120.osm.pbf (MD5 a142ed996037a4005a68196ad154f036, matching Geofabrik; data up to 2026-11-20T21:21:21Z); nodes, ways and relations. Rows, not sites.",
+    "counts": {
+      "addr:housenumber": 10527,
+      "addr:postcode": 1314,
+      "addr:street": 56144,
+      "amenity=clinic": 649,
+      "amenity=doctors": 202,
+      "amenity=drinking_water": 88,
+      "amenity=fire_station": 43,
+      "amenity=fuel": 714,
+      "amenity=hospital": 907,
+      "amenity=pharmacy": 2627,
+      "amenity=police": 593,
+      "amenity=school": 9806,
+      "amenity=shelter": 922,
+      "amenity=water_point": 8,
+      "emergency=ambulance_station": 8,
+      "emergency=assembly_point": 10,
+      "healthcare=centre": 47,
+      "healthcare=hospital": 849,
+      "man_made=storage_tank": 933,
+      "man_made=water_tap": 63,
+      "man_made=water_tower": 591,
+      "man_made=water_well": 75,
+      "name:ay": 125,
+      "name:gn": 25,
+      "name:qu": 143,
+      "social_facility=shelter": 9,
+      "water=reservoir": 4402,
+      "waterway=dam": 1081
+    },
+    "named": {
+      "amenity=clinic": 615,
+      "amenity=doctors": 182,
+      "amenity=drinking_water": 50,
+      "amenity=fire_station": 41,
+      "amenity=fuel": 670,
+      "amenity=hospital": 855,
+      "amenity=pharmacy": 2297,
+      "amenity=police": 514,
+      "amenity=school": 9091,
+      "amenity=shelter": 31,
+      "amenity=water_point": 6,
+      "emergency=ambulance_station": 6,
+      "emergency=assembly_point": 7,
+      "healthcare=centre": 45,
+      "healthcare=hospital": 804,
+      "man_made=storage_tank": 25,
+      "man_made=water_tap": 14,
+      "man_made=water_tower": 18,
+      "man_made=water_well": 38,
+      "social_facility=shelter": 7,
+      "water=reservoir": 618,
+      "waterway=dam": 647
+    },
+    "shelter_type_of_amenity_shelter": {
+      "weather_shelter": 185,
+      "(none)": 171,
+      "public_transport": 163,
+      "gazebo": 147,
+      "picnic_shelter": 138,
+      "sun_shelter": 73,
+      "weather_shelterPuerto_Jennefer": 9,
+      "pavilion": 9,
+      "roof": 5,
+      "lean_to": 4,
+      "pergola": 4,
+      "wildlife_hide": 4,
+      "basic_hut": 3,
+      "building": 3,
+      "bicycle_parking": 2,
+      "cabana": 1,
+      "apron": 1
+    },
+    "emergency_tag_on_amenity_hospital": {
+      "yes": 455,
+      "(none)": 442,
+      "no": 9,
+      "ambulance_station": 1
+    },
+    "addr_housenumber_by_department": {
+      "about": "Nodes, and ways by their first node; relations not placed. Departments from COD-AB level 1.",
+      "placed": 10475,
+      "counts": {
+        "La Paz": 4581,
+        "Cochabamba": 2939,
+        "Santa Cruz": 2282,
+        "Chuquisaca": 255,
+        "Potosí": 156,
+        "Tarija": 92,
+        "Oruro": 57,
+        "Beni": 55,
+        "(outside COD-AB)": 44,
+        "Pando": 14
+      }
+    },
+    "caveat": "amenity=shelter marks small roofs, not emergency shelters. healthcare=* overlaps amenity=* and was not de-duplicated."
+  },
+  "help_point_gaps": {
+    "health": "No Ministry of Health facility download found. HDX: hotosm_bol_health_facilities (OSM, ODbL, 2026-11-16) and bolivia-healthsites (OSM, ODbL, 2026-09-29) are OSM data; bolivia-health (Ministerio de Salud y Deportes, licence \"Other\", 2018-08-16) is old with unclear terms.",
+    "fire_police_shelters": "No open national list found."
+  },
+  "licences": {
+    "CC-BY-IGO": {
+      "name": "Creative Commons Attribution for Intergovernmental Organisations",
+      "url": "https://creativecommons.org/licenses/by/3.0/igo/",
+      "attribution": "Credit OCHA and its source (Ministerio de Desarrollo Rural y Tierras).",
+      "share_alike": false,
+      "verified": "licence name read through HDX API 2026-11-21; licence text not reopened"
+    },
+    "ODbL-1.0": {
+      "name": "Open Database License 1.0",
+      "url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "© OpenStreetMap contributors; a database built from it is offered under the ODbL.",
+      "share_alike": true,
+      "verified": "licence text not reopened"
+    },
+    "CC-BY-4.0": {
+      "name": "Creative Commons Attribution 4.0 International",
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "attribution": "Credit the publisher, link the licence, say if changed.",
+      "share_alike": false,
+      "verified": "licence text not reopened"
+    },
+    "CDLA-Permissive-2.0": {
+      "name": "Community Data License Agreement – Permissive, Version 2.0",
+      "url": "https://cdla.dev/permissive-2-0/",
+      "attribution": "Make the licence text available with the data when sharing it.",
+      "share_alike": false,
+      "verified": "named in Microsoft's README (opened 2026-11-21); licence text not reopened"
+    },
+    "Copernicus-WorldDEM-30": {
+      "name": "Copernicus WorldDEM-30 licence",
+      "url": "see docs/regions-proposed.json",
+      "attribution": "see docs/regions-proposed.json",
+      "share_alike": false,
+      "verified": "as in docs/regions-proposed.json"
+    },
+    "geoBoundaries-PD": {
+      "name": "Public Domain, as geoBoundaries records it (\"Public Domain; free use and access to information\")",
+      "url": "https://www.geoboundaries.org/api/current/gbOpen/BOL/ADM1/",
+      "attribution": "none required as recorded; credit geoBoundaries and GeoBolivia as good practice",
+      "share_alike": false,
+      "verified": "metadata opened 2026-11-21; the cited GeoBolivia record could not be reached"
+    },
+    "Public-domain-NE": {
+      "name": "Natural Earth terms of use (public domain)",
+      "url": "https://www.naturalearthdata.com/about/terms-of-use/",
+      "attribution": "none required",
+      "share_alike": false,
+      "verified": "terms page opened 2026-11-21"
+    },
+    "INE-BO-terms": {
+      "name": "INE Bolivia, Términos y condiciones de uso (TCU) del portal del Censo 2024, last updated 2025-08-25",
+      "url": "https://www.ine.gob.bo/index.php/terminos-y-condiciones/",
+      "attribution": "\"Fuente: Instituto Nacional de Estadística.\"",
+      "share_alike": false,
+      "conditions": "\"No se permite utilizar los datos con fines comerciales sin autorización previa del INE o sin respetar la fuente y contexto originales.\" Not an open licence. No INE layer is proposed.",
+      "verified": "2026-11-21"
+    },
+    "SENAMHI-reserved": {
+      "name": "No licence stated; pages end \"© Copyright 2026 | Derechos Reservados SENAMHI\"",
+      "url": "https://senamhi.gob.bo/",
+      "attribution": "unknown",
+      "share_alike": "unknown",
+      "conditions": "Treated as not yet usable without SENAMHI's permission.",
+      "verified": "2026-11-21"
+    }
+  },
+  "legal_open_question": {
+    "summary": "No Bolivian rule like Chile's DIFROL legend was found, but the search was incomplete. Left to the maintainers.",
+    "ley_339_2013": "Art. 23: \"La cartografía oficial es aquella elaborada por el Instituto Geográfico Militar\"; Art. 16: the IGM \"no define la delimitación de unidades territoriales\" (opened on Lexivox, unofficial copy, 2026-11-21).",
+    "ds_5050_2023": "Approves the internal boundary layer and sends limits to the IGM for demarcation (opened in an earlier pass on 2026-11-21; not reopened).",
+    "igm_terms": "Not checked: igm.gob.bo and igmbolivia.gob.bo gave no answer.",
+    "sea_claim": "Bolivia keeps a claim to access to the Pacific; the ICJ ruled in 2018 that Chile has no obligation to negotiate (general knowledge). No rule found that maps must show it (search only). DS 5376 of 2025-04-16 closed the Dirección Estratégica de Reivindicación Marítima, Silala y Recursos Hídricos Internacionales (opened on Lexivox)."
+  },
+  "emergency_numbers": {
+    "about": "Recorded only so the map and the number table agree; the table belongs to issue #261. No number is proposed for the app or for guide search.",
+    "issue": "https://github.com/Immortal-Protocols/lastbook/issues/261",
+    "rows": [
+      {
+        "service": "police (Radio Patrullas)",
+        "number": "110",
+        "status": "Bolivian sources agree",
+        "sources": "policia.bo (opened 2026-11-21); Defensoría del Pueblo leaflet, undated (earlier pass)"
+      },
+      {
+        "service": "fire (Bomberos)",
+        "number": "119",
+        "status": "open: conflict on the official page",
+        "sources": "policia.bo lists \"BOMBEROS 119\" but also \"FELCC 119\" in the same block, and \"122 - FELCC\" in its footer (opened 2026-11-21)"
+      },
+      {
+        "service": "ambulance",
+        "number": null,
+        "status": "not verified",
+        "sources": "Candidates 118, 165, 167, 168 from foreign, municipal and older sources (earlier pass); no current national source."
+      }
+    ]
+  },
+  "addressing": {
+    "order": "Street, then number, then zona or barrio and city; \"s/n\" for no number (general knowledge).",
+    "postcode": "Not in everyday use (general knowledge, not checked).",
+    "accents": "normalize() in engine/address_search.py turns \"Potosí\" into \"potos\" and \"Calle Ñuflo de Chávez Nº 123\" into \"calle uflo de ch vez n 123\" (tested 2026-11-22). See related.pr_79.",
+    "osm_addresses": "addr:housenumber on 10,527 objects; 4,581 in La Paz, 2,939 in Cochabamba, 2,282 in Santa Cruz, 629 in the other six departments (computed).",
+    "verified": "No Bolivian postal or municipal source checked; needs a Bolivian reader."
+  },
+  "undecided": [
+    "Codes in setup (BO; one-letter hyphenated codes such as BO-L)",
+    "One region or nine",
+    "The box rule: the border as the edge of a first build, and a later band for twin towns and Lake Titicaca",
+    "Publishing the border, in particular with Chile; whether to ask the IGM",
+    "Address search (no open source beyond OSM, number after street, s/n, accent folding)",
+    "Help points with no open source (health, fire stations, shelters)",
+    "Hazard layers (SENAMHI states no open licence)",
+    "Emergency numbers: left to #261",
+    "The California-only layers (REGIONS.md item 7)"
+  ],
+  "marks": {
+    "opened": "the page, file or API response was opened and read",
+    "computed": "computed here from a downloaded file",
+    "search only": "seen in a search result; page not opened",
+    "general knowledge": "stated from memory; needs a local reader's check",
+    "not checked": "could not be reached or read"
+  },
+  "related": {
+    "issue_261": "Emergency number per country.",
+    "pr_235": "Owner review: bare numbers with different meanings per country stay out of global guide search.",
+    "pr_79": "Proposes that each address index declares its own spelling rule (meta.norm)."
+  }
+}

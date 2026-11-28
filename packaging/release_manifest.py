@@ -12,8 +12,10 @@ publish-packs has written it). Every URL must be on an allowed host (engine/setu
 The packaging spec bundles the output as setup/manifest-v1.json.
 """
 import argparse
+import hashlib
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -62,13 +64,60 @@ def small_from(folder):
             'files': [{'name': z.name, 'url': f'{BASE}/{z.name}', 'size': z.stat().st_size, 'sha256': sums[z.name], 'kind': 'zip'}]}
 
 
+def split_pack(packs, archive, destination, part_size):
+    """Write immutable cache-sized objects and return the selected pack with their pins."""
+    matches = [p for p in packs if len(p.get('files', [])) == 1 and p['files'][0]['name'] == archive.name]
+    if len(matches) != 1:
+        raise ValueError(f'{archive.name} must be the sole ZIP of one pack in --packs')
+    pack = matches[0]
+    source = pack['files'][0]
+    if source.get('kind', 'zip') != 'zip' or not manifest.SHA.fullmatch(source['sha256']):
+        raise ValueError(f'{archive.name} needs its published ZIP size and SHA-256 in --packs')
+    size = source['size']
+    if not 0 < part_size <= manifest.MAX_PACK_PART:
+        raise ValueError('part size must be between 1 byte and 256 MiB')
+    if archive.stat().st_size != size or size <= part_size:
+        raise ValueError(f'{archive.name} must match the published size and be larger than one part')
+    destination.mkdir(parents=True)
+    try:
+        files, full = [], hashlib.sha256()
+        with archive.open('rb') as input_file:
+            for index, offset in enumerate(range(0, size, part_size), 1):
+                name = f'pack-{source["sha256"]}-{part_size}-{index:05d}.bin'
+                remaining = length = min(part_size, size - offset)
+                digest = hashlib.sha256()
+                with (destination / name).open('xb') as output_file:
+                    while remaining:
+                        data = input_file.read(min(remaining, 8 * 1024 * 1024))
+                        if not data:
+                            raise ValueError(f'{archive.name} ended before its published size')
+                        output_file.write(data)
+                        full.update(data)
+                        digest.update(data)
+                        remaining -= len(data)
+                files.append({'name': name, 'url': f'{BASE}/{name}', 'size': length, 'sha256': digest.hexdigest()})
+            if input_file.read(1) or full.hexdigest() != source['sha256']:
+                raise ValueError(f'{archive.name} does not match the published size and SHA-256')
+    except BaseException:
+        shutil.rmtree(destination)
+        raise
+    return {**pack, 'parts': files}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--packs', default=str(ROOT / 'derived' / 'release' / 'manifest-v1.json'))
     ap.add_argument('--out', default=str(ROOT / 'derived' / 'release' / 'setup' / 'manifest-v1.json'))
     ap.add_argument('--measure', help='a copy of the model file to measure memory_bytes from')
     ap.add_argument('--small-from', help='a release folder holding Lastbook-Small.zip and SHA256SUMS.txt')
+    ap.add_argument('--split-pack', type=Path, help='split a published ZIP into cacheable objects for the bundled desktop manifest')
+    ap.add_argument('--parts-dir', type=Path, help='new directory for --split-pack objects, to publish at downloads.lastbook.org')
+    ap.add_argument('--part-bytes', type=int, help='bytes per part (default and maximum: 256 MiB)')
     a = ap.parse_args()
+    if a.part_bytes is not None and not a.split_pack:
+        ap.error('--part-bytes requires --split-pack')
+    if bool(a.split_pack) != bool(a.parts_dir):
+        ap.error('--split-pack and --parts-dir must be used together')
     try:
         src = json.loads(Path(a.packs).read_text(encoding='utf-8'))
     except FileNotFoundError:
@@ -87,9 +136,19 @@ def main():
     out = {'version': 1, 'published': src.get('published') or time.strftime('%Y-%m-%d'), 'packs': packs, 'maps': list(src.get('maps') or []),
            'address_indexes': list(src.get('address_indexes') or []),
            'models': [model_entry(measure(a.measure) if a.measure else MEASURED_MEMORY)]}
-    if manifest.validate(out) is None:
+    if manifest.validate(out, bundled=True) is None:
         bad = [f.get('url') for p in packs for f in p.get('files', []) if not download.url_allowed(f.get('url'))]
         sys.exit('the manifest does not pass engine/setup/manifest.validate' + (f'; addresses not allowed: {bad}' if bad else ''))
+    if a.split_pack:
+        try:
+            split = split_pack(packs, a.split_pack, a.parts_dir, manifest.MAX_PACK_PART if a.part_bytes is None else a.part_bytes)
+        except (OSError, ValueError) as e:
+            ap.error(str(e))
+        out['packs'] = [split if p['id'] == split['id'] else p for p in packs]
+        if manifest.validate(out, bundled=True) is None:
+            shutil.rmtree(a.parts_dir)  # split_pack created this directory for this invocation.
+            sys.exit('Generated parts do not pass the bundled Setup manifest validator. Check their names, URLs, sizes and SHA-256.')
+        print(f'{a.parts_dir}: {len(split["parts"])} parts for {a.split_pack.name}; publish them before shipping this manifest')
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(out, indent=1) + '\n', encoding='utf-8')
     print(f'{a.out}: {len(out["maps"])} maps, {len(packs)} packs ({", ".join(p["id"] + ("" if p.get("available") else " later") for p in packs)}), 1 model')

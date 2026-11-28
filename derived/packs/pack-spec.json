@@ -533,6 +533,18 @@
         "HI": 0.04
       }
     },
+    "country": {
+      "rule": "base plus rows inside the country box; box = bounding box of the Geofabrik OpenStreetMap extract polygon for the country (packaging/europe-countries.json), plus or minus 0.15 degrees; region code eu-<iso>, so a country never takes a state's code",
+      "national.sqlite": "feat and poi in box",
+      "water.sqlite": "feat and resource in box",
+      "terrain.sqlite": "tile z<=12 in box",
+      "buildings.sqlite": "bldg and bldg_osm in box",
+      "crops.sqlite": "resource and tile in box",
+      "atlas.sqlite": "resource in box",
+      "places.sqlite": "base rows; plus OpenStreetMap rows in box",
+      "map.sqlite": "empty schema",
+      "note": "Same cutting rules as a state; what a country set holds is bounded by the source layers' own coverage. Publishing is opt-in (packaging/country-publication.json) and packaging/state_maps.py refuses a country whose built set has no detailed roads, help or water points, terrain, buildings, crops or OpenStreetMap place names inside its box. Address indexes stay US-only: their source (Overture addresses) is split by US state."
+    },
     "us": {
       "clones": [
         "national.sqlite",

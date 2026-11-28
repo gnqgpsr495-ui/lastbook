@@ -9,13 +9,17 @@ renamed when whole, so an unpack that stops (a crash, power) carries on where it
 An upgrade first moves the old library aside to LastbookData.old-<date>; when the app restarts it opens the new one, and only if
 that fails to open is the old one put back (apply_pending, called by app/main.py before the engine starts).
 """
+import io
 import json
 import os
 import re
 import shutil
 import stat
+import sys
 import time
 import zipfile
+from bisect import bisect_right
+from itertools import accumulate
 from pathlib import Path, PurePosixPath
 
 DATA_NAME = 'LastbookData'
@@ -24,6 +28,8 @@ SLACK = 1.02            # installed_bytes is measured; a zip's members may add a
 SPACE_MARGIN = 2 * 10 ** 9
 PENDING = 'pending.json'
 COPY = 4 * 1024 * 1024
+RENAME_WAITS = (0.25, 0.5, 1, 2)     # seconds between tries of a rename Windows refuses for a file in use
+SWITCH_ATTEMPTS = 3     # starts that try a refused switch before it is dropped
 
 
 class Refused(Exception):
@@ -112,6 +118,55 @@ def map_member(rel, is_dir=False):
     if is_dir:
         return rel in MAP_DIRS
     return rel in MAP_FIXED or bool(MAP_SQLITE.fullmatch(rel))
+
+
+class SplitZip(io.RawIOBase):
+    """A seekable ZIP spread across verified objects, without assembling a second copy on disk."""
+
+    def __init__(self, paths, sizes):
+        self.paths = paths
+        self.ends = list(accumulate(sizes, initial=0))
+        self.position = 0
+        self.index = -1
+        self.part = None
+
+    def readable(self):
+        return True
+
+    def seekable(self):
+        return True
+
+    def tell(self):
+        return self.position
+
+    def seek(self, offset, whence=os.SEEK_SET):
+        base = {os.SEEK_SET: 0, os.SEEK_CUR: self.position, os.SEEK_END: self.ends[-1]}[whence]
+        if base + offset < 0:
+            raise OSError('Negative ZIP offset')
+        self.position = base + offset
+        return self.position
+
+    def readinto(self, buffer):
+        if self.position >= self.ends[-1] or not buffer:
+            return 0
+        index = bisect_right(self.ends, self.position) - 1
+        if index != self.index:
+            if self.part is not None:
+                self.part.close()
+            self.part = open(self.paths[index], 'rb', buffering=0)
+            self.index = index
+        self.part.seek(self.position - self.ends[index])
+        size = min(len(buffer), self.ends[index + 1] - self.position)
+        count = self.part.readinto(memoryview(buffer)[:size])
+        if not count:
+            raise OSError('An archive part ended early')
+        self.position += count
+        return count
+
+    def close(self):
+        if self.part is not None:
+            self.part.close()
+        super().close()
 
 
 def check_zip(path, installed_bytes=None, allowed=None):
@@ -302,7 +357,7 @@ def plan_update(lib, new):
     kept maps each kind to [(path, bytes)], sorted; kept_bytes to their total. map is the installed map's name, or None."""
     lib = Path(lib)
     installed = read_pack_manifest(lib / 'pack-manifest.tsv')
-    own_map = map_set(lib) is not None
+    own_map = has_separate_map(lib, pack_lists_map=any(rel == 'map-set.json' for rel, _, _ in installed))
     map_paths = set(map_files(lib)) if own_map else set()
 
     def pack_side(rows):
@@ -354,6 +409,24 @@ def old_name(target):
     return p
 
 
+def say(*parts):
+    """Print a diagnostic line that the console cannot refuse.
+
+    Setup's own messages are written for the person and use typographic punctuation, so a Refused carries characters
+    such as \u2019. Running from source, sys.stdout is the console's own encoding: a non-UTF-8 locale (LC_ALL=C) or a
+    legacy Windows code page cannot take those characters, and print() then raises UnicodeEncodeError in the middle of
+    handling the Refused. The line is only a diagnostic, but the raise escapes before the error is recorded, so the
+    person loses the error the line was reporting. The packaged app's log already replaces what it cannot write
+    (RotatingLog in app/main.py); a plain console gets the same treatment here.
+    """
+    line = ' '.join(str(p) for p in parts)
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:
+        enc = getattr(sys.stdout, 'encoding', None) or 'ascii'
+        print(line.encode(enc, 'replace').decode(enc, 'replace'), flush=True)
+
+
 def stage_switch(pend, new_lib, target, model_file=None, kind=None, model_sha256=None):
     """Writes what the switch will do to `pend`, a file in the app's own settings folder (never the work folder), for
     apply_pending. Nothing is renamed yet."""
@@ -388,36 +461,38 @@ def carry_over(old, new, moved=None, *, conflicts=None):
             os.replace(source, dest)
             moved.append(dest)
     state = old / 'derived' / 'llm' / 'state.json'
-    if state.is_file() and not (new / 'derived' / 'llm' / 'state.json').exists():
+    if state.is_file():      # copied, not moved: copied again over one a refused switch left, as the person may have changed it since
         (new / 'derived' / 'llm').mkdir(parents=True, exist_ok=True)
         shutil.copy2(state, new / 'derived' / 'llm' / 'state.json')
     return moved
 
 
-def switch(new_lib, target):
-    """The renames. Returns the old library's new name, or None when there was none. Raises Refused, leaving things as they were."""
+def switch(new_lib, target, old=None):
+    """The renames. `old`: the name to move the old library to, when the caller has already recorded it.
+    Returns the old library's new name, or None when there was none. Raises Refused, leaving things as they were."""
     new_lib, target = Path(new_lib), Path(target)
     if not is_library(new_lib):
         raise Refused('activate', 'The new library is not complete.')
-    old = None
     carried = []
-    if target.exists():
-        old = old_name(target)
+    if not target.exists():
+        old = None
+    else:
+        old = Path(old) if old else old_name(target)
         if is_library(target):
             try:
                 carry_over(target, new_lib, carried)
             except OSError as e:
                 _refuse_carried_back(carried, new_lib, target, f'Lastbook could not move your files into the new library ({type(e).__name__}). Close anything using them, then try again.')
         try:
-            os.replace(target, old)
+            _rename(target, old)
         except OSError as e:
             _refuse_carried_back(carried, new_lib, target, f'Lastbook could not move the old library aside ({type(e).__name__}). Close anything using it, then try again.')
     try:
-        os.replace(new_lib, target)
+        _rename(new_lib, target)
     except OSError as e:
         if old:
             try:
-                os.replace(old, target)
+                _rename(old, target)
             except OSError:
                 still = [str(moved) for moved in carried if moved.is_file()]
                 raise Refused('activate', f'Lastbook could not put the new library in place ({type(e).__name__}), nor the old one back. '
@@ -443,6 +518,17 @@ def _refuse_carried_back(carried, new_lib, target, message):
     raise Refused('activate', message)
 
 
+def _rename(src, dst):
+    """os.replace, tried again for a few seconds while Windows refuses it for a file in use: the app that just closed may
+    not have let go of its files yet."""
+    for wait in RENAME_WAITS:
+        try:
+            return os.replace(src, dst)
+        except PermissionError:
+            time.sleep(wait)
+    return os.replace(src, dst)
+
+
 # ----------------------------------------------------------------------------------------------------------- state maps --
 def map_set(lib):
     """The map set's map-set.json ({name, files: {path: bytes}}), or None."""
@@ -462,6 +548,27 @@ def map_name(lib):
         return str(json.loads((Path(lib) / 'pack.json').read_text(encoding='utf-8')).get('map') or 'base')
     except (OSError, ValueError, AttributeError):
         return 'base'
+
+
+def has_separate_map(lib, *, pack_lists_map=None):
+    """Does the library hold a map set installed apart from its pack (a state map), rather than the pack's own (All's whole US)?
+    The pack's own set is named by pack.json's `map`, and its map-set.json is listed in pack-manifest.tsv with its other files,
+    so they are checked and fetched with the pack. Ownership never depends on map-set.json's contents being whole: a damaged one
+    of the pack's own then shows up as a damaged pack file.
+
+    Callers that have read the pack manifest can supply whether it lists map-set.json."""
+    lib = Path(lib)
+    d = map_set(lib)
+    if not d:
+        return False
+    try:
+        own = json.loads((lib / 'pack.json').read_text(encoding='utf-8')).get('map')
+        if pack_lists_map is None:
+            pack_lists_map = any(line.split('\t', 1)[0] == 'map-set.json'
+                                 for line in (lib / 'pack-manifest.tsv').read_text(encoding='utf-8').splitlines()[1:])
+    except (OSError, ValueError, AttributeError):
+        return True
+    return not (pack_lists_map and d.get('name') == own)
 
 
 def check_map(lib):
@@ -561,7 +668,7 @@ def _apply_map(work, pend, d, target, note):
         try:
             swap_map(target, d['new'], old_dir)
         except Refused as e:
-            print('setup: map switch failed:', e.message, flush=True)
+            say('setup: map switch failed:', e.message)
             pend.unlink()
             note['error'] = e.message
             return (target if is_library(target) else None), note
@@ -673,14 +780,35 @@ def apply_pending(pend, work):
     note = {'target': str(target), 'old': None, 'model_file': d.get('model_file'), 'model_sha256': d.get('model_sha256')}
     if d.get('kind') == 'map':
         return _apply_map(work, pend, d, target, note)
+    old = d.get('old')
+    if not d.get('switched') and old and Path(old).exists() and not Path(d['new']).exists() and is_library(target):
+        d['switched'] = True       # stopped after the new library went in, before this record said so: the switch is made,
+        _write_json(pend, d)       # and the old library stays where it was recorded, for opened() to keep
     if d.get('switched'):
         lib_ok = is_library(target)
     else:
+        if not target.exists() and old and Path(old).exists():     # stopped after the old library moved aside: put it back, then start over
+            try:
+                if Path(d['new']).is_dir() and is_library(old):     # switch() carries only from a library, so only one gets files back
+                    carry_over(d['new'], old)
+                os.replace(old, target)
+            except OSError as e:     # left for the next start to try again
+                note['error'] = f'Lastbook could not put the old library back ({type(e).__name__}). It is at {old}; rename it to {target.name} to use it again.'
+                return None, note
+        old = old_name(target) if target.exists() else None
+        if old:
+            d['old'] = str(old)
+            _write_json(pend, d)       # recorded before anything moves, so a stop part-way is found next start
         try:
-            old = switch(d['new'], target)
+            old = switch(d['new'], target, old)
         except Refused as e:
-            print('setup: switch failed:', e.message, flush=True)
-            pend.unlink()
+            say('setup: switch failed:', e.message)
+            d['attempts'] = d.get('attempts', 0) + 1
+            if d['attempts'] < SWITCH_ATTEMPTS and is_library(target):      # a file in use may be free at the next start: tried again then (only if nothing was left half done)
+                _write_json(pend, d)
+                note['again'] = True
+            else:
+                pend.unlink()
             note['error'] = e.message
             return (target if is_library(target) else None), note
         d['switched'], d['old'] = True, old and str(old)

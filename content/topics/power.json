@@ -68,7 +68,7 @@
   {
    "id": "generator",
    "label": "I want to run a generator safely",
-   "hint": "Portable generator, extension cords, refuelling, CO alarm",
+   "hint": "Portable generator, extension cords, refuelling with petrol, CO alarm",
    "read": [
     {
      "doc": "equipment-b463000c0e14b4ad",
@@ -99,7 +99,7 @@
   {
    "id": "batteries-solar",
    "label": "Charging phones from batteries, a car or solar",
-   "hint": "Power bank, battery station, solar panels, car charger",
+   "hint": "Power bank (powerbank), battery station, solar panels, car charger",
    "read": [
     {
      "doc": "cecc1671ae4d02",
@@ -210,7 +210,7 @@
   {
    "id": "long-outage",
    "label": "The outage could last days or weeks",
-   "hint": "Planning, heat or cold, staying put or leaving",
+   "hint": "No electricity for days, planning, heat or cold, staying put or leaving",
    "read": [
     {
      "doc": "e629b2983d95e4",

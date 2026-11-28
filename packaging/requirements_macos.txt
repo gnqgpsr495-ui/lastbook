@@ -10,4 +10,4 @@ libzim==3.13.1
 # server.py renders PDF pages through bitmap.to_numpy().
 numpy==2.4.6
 beautifulsoup4==4.15.0
-pypdfium2==5.14.0
+pypdfium2==5.15.2

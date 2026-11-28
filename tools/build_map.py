@@ -14,7 +14,6 @@ the original archive is only read. Output tables:
 import math, sqlite3, struct, sys, time
 from array import array
 
-SRC, DST = sys.argv[1], sys.argv[2]
 Q = 1e6
 
 ROAD_Z = {'motorway': 5, 'trunk': 6, 'motorway_link': 10, 'trunk_link': 10, 'primary': 8, 'primary_link': 12,
@@ -119,16 +118,17 @@ def area_z(minx, maxx, miny, maxy, base):
     return max(base, min(16, z))
 
 
-def main():
-    t0 = time.time()
-    src = sqlite3.connect(SRC)
-    dst = sqlite3.connect(DST)
-    dst.executescript('''PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF;
-      DROP TABLE IF EXISTS feat; DROP TABLE IF EXISTS feat_idx; DROP TABLE IF EXISTS poi; DROP TABLE IF EXISTS meta;
+MAP_SCHEMA = '''DROP TABLE IF EXISTS feat; DROP TABLE IF EXISTS feat_idx; DROP TABLE IF EXISTS poi; DROP TABLE IF EXISTS meta;
       CREATE TABLE feat(id INTEGER PRIMARY KEY, layer TEXT, cls TEXT, name TEXT, minz INTEGER, geom BLOB);
       CREATE VIRTUAL TABLE feat_idx USING rtree(id, minx, maxx, miny, maxy, minz, maxz);
       CREATE TABLE poi(id INTEGER PRIMARY KEY, cls TEXT, name TEXT, lon REAL, lat REAL);
-      CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);''')
+      CREATE TABLE meta(key TEXT PRIMARY KEY, value TEXT);'''
+
+
+def build(src, dst, metadata):
+    t0 = time.time()
+    dst.executescript('PRAGMA journal_mode=OFF; PRAGMA synchronous=OFF;')
+    dst.executescript(MAP_SCHEMA)
     fid = [0]
 
     def add(layer, cls, name, minz, parts):
@@ -195,14 +195,18 @@ def main():
             pid += 1
             dst.execute('INSERT INTO poi VALUES (?,?,?,?,?)', (pid, cls, name, (minx + maxx) / 2, (miny + maxy) / 2))
     dst.execute('CREATE INDEX poi_cls ON poi(cls, lon, lat)')
-    dst.executemany('INSERT INTO meta VALUES (?,?)', [
-        ('source', 'OpenStreetMap contributors, via Geofabrik socal-latest-free.gpkg.zip (ODbL 1.0)'),
-        ('data_as_of', '2026-10-25T21:21:21Z'),
-        ('bounds', '-121.36,32.50,-114.10,35.89'),
-        ('built', time.strftime('%Y-%m-%dT%H:%M:%S')),
-    ])
+    dst.executemany('INSERT INTO meta VALUES (?,?)', metadata.items())
     dst.commit()
     print('done features', fid[0], 'pois', pid, round(time.time() - t0), 's', flush=True)
+    return fid[0]
 
 
-main()
+if __name__ == '__main__':
+    src, dst = sys.argv[1:3]
+    with sqlite3.connect(src) as source, sqlite3.connect(dst) as output:
+        build(source, output, {
+            'source': 'OpenStreetMap contributors, via Geofabrik socal-latest-free.gpkg.zip (ODbL 1.0)',
+            'data_as_of': '2026-10-25T21:21:21Z',
+            'bounds': '-121.36,32.50,-114.10,35.89',
+            'built': time.strftime('%Y-%m-%dT%H:%M:%S'),
+        })

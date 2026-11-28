@@ -124,6 +124,46 @@ class Lookup(unittest.TestCase):
         found = library(main.default_parent() / 'LastbookData')
         self.assertEqual(main.data_folder(None), found)
 
+    def test_interrupted_remember_keeps_old_choice(self):
+        # A write that stops halfway (full disk, power cut) must not leave a broken settings.json behind.
+        old = library(self.tmp / 'usb' / 'LastbookData')
+        main.remember(old)
+        new = library(self.tmp / 'other' / 'LastbookData')
+
+        def half_then_fail(data, out):
+            text = json.dumps(data)
+            out.write(text[:len(text) // 2])
+            raise OSError('No space left on device')
+
+        with mock.patch.object(main.json, 'dump', side_effect=half_then_fail):
+            main.remember(new)
+        self.assertEqual(main.remembered(), old)
+        self.assertEqual([p.name for p in self.settings().parent.iterdir()], ['settings.json'])   # no temporary file left
+
+    def test_overlapping_remember_calls_each_publish_their_choice(self):
+        first = self.tmp / 'first' / 'LastbookData'
+        second = self.tmp / 'second' / 'LastbookData'
+        replace = os.replace
+
+        def save_second_before_first(src, dst):
+            with mock.patch.object(os, 'replace', replace):
+                main.remember(second)
+            self.assertEqual(main.remembered(), second)
+            replace(src, dst)
+
+        with mock.patch.object(os, 'replace', save_second_before_first):
+            main.remember(first)
+        self.assertEqual(main.remembered(), first)
+        self.assertEqual(list(self.settings().parent.iterdir()), [self.settings()])
+
+    def test_remember_handles_failed_temporary_file_cleanup(self):
+        old = self.tmp / 'old' / 'LastbookData'
+        main.remember(old)
+        with mock.patch.object(os, 'replace', side_effect=PermissionError('in use')), \
+                mock.patch.object(Path, 'unlink', side_effect=PermissionError('in use')):
+            main.remember(self.tmp / 'new' / 'LastbookData')
+        self.assertEqual(main.remembered(), old)
+
     def test_ask_until_good_then_remember(self):
         good = library(self.tmp / 'Lastbook-Small' / 'LastbookData')
         asked = []
@@ -267,6 +307,76 @@ class SetupRelaunch(unittest.TestCase):
                 main.relaunch()
             restart.assert_called_once()
             stop.assert_called_once_with(0)
+
+    def test_windows_relaunch_names_the_old_process(self):
+        """#311: the new process waits for this one to go before it renames the library."""
+        seen = []
+        with mock.patch.object(sys, 'platform', 'win32'), mock.patch.dict(os.environ), \
+                mock.patch('subprocess.Popen', side_effect=lambda argv, **kw: seen.append(os.environ.get('LASTBOOK_AFTER_PID'))), \
+                mock.patch.object(os, '_exit', side_effect=SystemExit):
+            with self.assertRaises(SystemExit):
+                main.relaunch()
+        self.assertEqual(seen, [str(os.getpid())])
+
+
+class WaitForOld(unittest.TestCase):
+    """#311: before setup's switch, the app waits (bounded) for the copy that relaunched it to end."""
+
+    def kernel(self, handle):
+        import ctypes
+        k = mock.Mock()
+        k.OpenProcess.return_value = handle
+        return k, mock.patch.object(ctypes, 'WinDLL', return_value=k, create=True)
+
+    def test_not_set_or_not_windows(self):
+        k, dll = self.kernel(5)
+        with dll, mock.patch.object(sys, 'platform', 'win32'), mock.patch.dict(os.environ):
+            os.environ.pop('LASTBOOK_AFTER_PID', None)
+            main.wait_for_old()
+        with dll, mock.patch.object(sys, 'platform', 'darwin'), mock.patch.dict(os.environ, {'LASTBOOK_AFTER_PID': '1234'}):
+            main.wait_for_old()
+            self.assertNotIn('LASTBOOK_AFTER_PID', os.environ)     # not handed on to a later relaunch
+        k.OpenProcess.assert_not_called()
+
+    def test_gone_already(self):
+        k, dll = self.kernel(0)          # OpenProcess fails: no such process
+        with dll, mock.patch.object(sys, 'platform', 'win32'), mock.patch.dict(os.environ, {'LASTBOOK_AFTER_PID': '1234'}):
+            main.wait_for_old()
+        self.assertEqual(k.OpenProcess.call_args[0][2], 1234)
+        k.WaitForSingleObject.assert_not_called()
+
+    def test_waits_bounded(self):
+        k, dll = self.kernel(77)
+        with dll, mock.patch.object(sys, 'platform', 'win32'), mock.patch.dict(os.environ, {'LASTBOOK_AFTER_PID': '1234'}):
+            main.wait_for_old()
+        handle, ms = k.WaitForSingleObject.call_args[0]
+        self.assertEqual(handle, 77)
+        self.assertTrue(0 < ms <= 30_000)
+        k.CloseHandle.assert_called_once_with(77)
+
+
+class SwitchErrorLogged(unittest.TestCase):
+    def test_switch_error_reaches_the_log(self):
+        """#311: the switch runs before the log is open; its error is written once it is."""
+        import contextlib, io
+        from engine.setup import api as setup_api
+        tmp = shorttemp.mkdtemp('lastbook-log-')
+        self.addCleanup(shutil.rmtree, tmp, ignore_errors=True)
+        lib = library(tmp / 'LastbookData')
+        before, after = io.StringIO(), io.StringIO()
+
+        def open_log(data):
+            sys.stdout = after
+        note = {'target': str(lib), 'old': None, 'error': 'Lastbook could not move the old library aside (PermissionError).'}
+        with mock.patch.object(sys, 'argv', ['Lastbook']), mock.patch.object(sys, 'platform', 'darwin'), \
+                mock.patch.dict(os.environ), \
+                mock.patch.dict(sys.modules, {'server': mock.Mock(), 'shell_macos': mock.Mock(), 'bridge': mock.Mock()}), \
+                mock.patch.object(setup_api, 'startup', return_value=(lib, note)), \
+                mock.patch.object(setup_api, 'opened'), mock.patch.object(setup_api, 'configure'), \
+                mock.patch.object(main, 'remember'), mock.patch.object(main, 'data_folder', return_value=lib), \
+                mock.patch.object(main, 'open_log', open_log), contextlib.redirect_stdout(before):
+            self.assertEqual(main.main(), 0)
+        self.assertIn(note['error'], after.getvalue())
 
 
 if __name__ == '__main__':

@@ -249,6 +249,16 @@ class ChatReadsThroughPageBody(unittest.TestCase):
             self.assertNotIn('Table (', out)
             self.assertIn(old(BLEACH_CENTRED, 3500), out)
 
+    def test_read_pages_on_a_document_without_text(self):
+        """A document with no extracted text (scanned pictures) answers the model instead of raising IndexError."""
+        import assistant
+        rec = {'id': 'scan', 'kind': 'pdf', 'notes': ''}
+        S = mock.Mock(catalog=lambda: {'by_id': {'scan': rec}}, page_texts=lambda r: [],
+                      public=lambda r: {'title': 'Scanned', 'publisher': 'P', 'year': '', 'trust': 'x', 'pages': 0})
+        with mock.patch.object(assistant, 'S', S, create=True):
+            out, _ = assistant.run_tool('read_pages', {'doc_id': 'scan', 'pages': [1]}, assistant.Session(), [])
+        self.assertIn('no text', out)
+
 
 if __name__ == '__main__':
     unittest.main()

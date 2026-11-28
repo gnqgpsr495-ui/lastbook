@@ -2,8 +2,8 @@
  "id": "disaster",
  "mode": "now",
  "title": "Stay safe in an earthquake, storm, fire, flood or tsunami",
- "short": "Earthquake, tsunami, hurricane, tornado, thunderstorm, wildfire, home and high-rise fire, flood, nuclear explosion, bombing, shelter-in-place",
- "intro": "What official guides say to do during and right after an earthquake, tsunami warning, hurricane, tornado or thunderstorm, wildfire or wildfire smoke, home or high-rise fire, flood, nuclear explosion, bombing, or chemical or radiation emergency, and how to plan an evacuation without a car — and how to get a go-bag and family plan ready beforehand.",
+ "short": "Earthquake, tsunami, hurricane, tornado, thunderstorm, avalanche, landslide, volcano, wildfire, home and high-rise fire, flood, nuclear explosion, bombing, shelter-in-place",
+ "intro": "What official guides say to do during and right after an earthquake, tsunami warning, hurricane, tornado or thunderstorm, avalanche, landslide, volcanic eruption, wildfire or wildfire smoke, home or high-rise fire, flood, nuclear explosion, bombing, or chemical or radiation emergency, and how to plan an evacuation without a car — and how to get a go-bag and family plan ready beforehand.",
  "keywords": [
   "earthquake",
   "drop cover hold on",
@@ -33,17 +33,23 @@
   "funnel cloud",
   "thunderstorms",
   "hail",
+  "avalanche",
+  "landslide",
+  "rockfall",
+  "volcano",
+  "eruption",
+  "lava",
   "chemical",
   "shelter in place",
   "radiation",
+  "radiological",
   "nuclear",
   "nuke",
   "missiles",
-  "fallout",
   "bombing",
   "explosions",
   "dirty bomb",
-  "go bag",
+  "go bag", "documents",
   "kit",
   "family plan",
   "high-rise",
@@ -165,7 +171,7 @@
   {
    "id": "smoke",
    "label": "Wildfire smoke is making the air bad",
-   "hint": "Smoky air from a wildfire or forest fire, not ordered to evacuate",
+   "hint": "Smoky air from a wildfire or forest fire, not ordered to evacuate, N95 respirator",
    "read": [
     {
      "doc": "a90ff7e6f3cf01",
@@ -311,7 +317,7 @@
   {
    "id": "thunderstorm",
    "label": "Thunderstorm, lightning or hail",
-   "hint": "Thunder nearby, caught outside, swimming or boating, hail while driving",
+   "hint": "Thunder nearby, caught outside, swimming or boating, hail while driving, hailstorms",
    "read": [
     {
      "doc": "d0fbb2e051cd46",
@@ -330,6 +336,101 @@
      "page": 85,
      "label": "Caught outdoors in a thunderstorm",
      "note": "CERT 2019 annex: shelters that do not protect, a metal-topped car as a last option, hail while driving, and how lightning travels through water and plumbing."
+    }
+   ]
+  },
+  {
+   "id": "avalanche",
+   "label": "Avalanche — caught or buried in one",
+   "hint": "Avalanche warning, trapped by a slide, steep slopes",
+   "read": [
+    {
+     "doc": "d0fbb2e051cd46",
+     "page": 5,
+     "label": "FEMA: how to stay safe when an avalanche threatens",
+     "note": "FEMA 2024 sheet: signs of increased danger such as recent avalanches and shooting cracks, slopes steeper than 30 degrees, calling 9-1-1 then searching for a buried partner, and treating hypothermia."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 7,
+     "label": "CERT: the danger scale, and if you are buried",
+     "note": "CERT 2019 annex: what the five danger levels, low to extreme, mean for travel, and cupping a hand in front of your face to clear airspace before the snow stops."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 8,
+     "label": "After an avalanche",
+     "note": "CERT 2019 annex: not yelling when buried, a brief call to 9-1-1 before an immediate search for a buried partner, the medical attention rescued people need, and additional slides."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 6,
+     "label": "CERT: where avalanches start, and warning signs",
+     "note": "CERT 2019 annex: slopes of 30 to 45 degrees and runout zones below them, recent avalanches, shooting cracks and whumpfing sounds, and not stopping your car in marked avalanche areas."
+    }
+   ]
+  },
+  {
+   "id": "landslide",
+   "label": "Landslide, mudslide or rockfall",
+   "hint": "Landslide warning, mudflow, debris flow, rock slide, ground rumbling",
+   "phrases": ["bulging ground", "ground bulging", "ground is bulging", "ground bulges", "bulging slope", "slope bulging", "slope bulges", "hillside bulging", "ground cracking", "cracking ground", "ground cracks open"],
+   "context": ["cracks", "cracking", "crack", "slope", "slopes", "hillside", "hill", "yard", "driveway", "retaining", "wall", "moving", "shifting", "rumbling", "rumble", "noise", "trees", "leaning", "tilting", "after", "rain", "storm"],
+   "read": [
+    {
+     "doc": "d0fbb2e051cd46",
+     "page": 16,
+     "label": "FEMA: under a landslide warning, find safe shelter right away",
+     "note": "FEMA 2024 sheet: what a landslide and a mudflow are, striking with little or no warning, and under a warning: evacuate early, listen for alerts, watch for signs and flooding."
+    },
+    {
+     "doc": "d0fbb2e051cd46",
+     "page": 17,
+     "label": "FEMA: how to stay safe when a landslide threatens",
+     "note": "FEMA 2024 sheet: signs like cracks or bulges in the ground and leaning poles, trees, walls or fences, and evacuating in advance, especially if a landslide could occur at night."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 67,
+     "label": "CERT: signs of a slide, and leaving before it starts",
+     "note": "CERT 2019 annex: ground wet where it is usually dry, a creek that suddenly rises or drops, a rumbling that grows louder, and getting out of the likely path."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 68,
+     "label": "At night, and after a landslide",
+     "note": "CERT 2019 annex: evacuating in advance to avoid night-time slides, watching for flooding, staying away from the slide area, and checking the foundation, chimney and surrounding land."
+    }
+   ]
+  },
+  {
+   "id": "volcano",
+   "label": "A volcano is erupting",
+   "hint": "Volcano warning, volcanic eruption, lava flow, ashfall, lahar, vog",
+   "read": [
+    {
+     "doc": "d0fbb2e051cd46",
+     "page": 30,
+     "label": "FEMA: under a volcano warning",
+     "note": "FEMA 2024 sheet: following evacuation or shelter orders, evacuating early if advised, avoiding areas downstream of the eruption, protecting yourself from falling ash, and not driving in heavy ash fall."
+    },
+    {
+     "doc": "d0fbb2e051cd46",
+     "page": 31,
+     "label": "FEMA: how to stay safe when a volcano threatens",
+     "note": "FEMA 2024 sheet: avoiding areas downwind and river valleys downstream, temporary shelter from ash with ventilation openings covered and doors and windows sealed, and staying indoors with breathing problems."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 109,
+     "label": "CERT: during a volcanic eruption",
+     "note": "CERT 2019 annex: what advisory, watch and warning mean, why staying home in a hazardous zone is dangerous, sheltering from ash, and driving slowly if you must drive."
+    },
+    {
+     "doc": "9681a68ebd07f5",
+     "page": 110,
+     "label": "After a volcanic eruption",
+     "note": "CERT 2019 annex: never climbing on a lava crust, staying away from ashfall areas, the higher risk to children and people with asthma, and how ash stalls engines."
     }
    ]
   },
@@ -450,6 +551,27 @@
      "note": "Follow local instructions, sheltering vs evacuating, closing air intakes, and showering and bagging clothes after exposure."
     }
    ]
+  },
+  {
+   "id": "pack",
+   "label": "What to pack for an evacuation",
+   "hint": "Checklist, the 5 Ps",
+   "phrases": ["pack", "packing", "go bag", "bug out bag", "grab bag"],
+   "context": ["bag", "bags", "evacuate", "evacuating", "leave", "leaving", "emergency", "hurry", "quickly", "list", "family", "kids", "car"],
+   "read": [
+    {
+     "doc": "2848f4bffb8109",
+     "page": 7,
+     "label": "The Five Ps of evacuation and a go-bag",
+     "note": "People, Prescriptions, Papers, Personal needs, Priceless items, and storing important documents safely."
+    },
+    {
+     "doc": "db4d9783fca34b",
+     "page": 2,
+     "label": "FEMA 2024 emergency supply kit checklist",
+     "note": "Basic kit items — water, food, radio with NOAA alerts, flashlight, whistle, masks, plastic sheeting, utility wrench — and extras on the reverse."
+    }
+   ]
   }
  ],
  "limits": [
@@ -537,6 +659,36 @@
    "text": "In a thunderstorm, avoid running water and landline phones; electricity can travel through plumbing and phone lines.",
    "doc": "d0fbb2e051cd46",
    "page": 25
+  },
+  {
+   "text": "If buried in an avalanche, do not yell; rescuers will not be able to hear you even though you can hear them.",
+   "doc": "9681a68ebd07f5",
+   "page": 8
+  },
+  {
+   "text": "Stay away from avalanche areas after a slide; there may be danger of additional slides.",
+   "doc": "9681a68ebd07f5",
+   "page": 8
+  },
+  {
+   "text": "Once a landslide starts, it may move too quickly to escape unless you are already near the edge; evacuate while there is enough warning to get out of its likely path.",
+   "doc": "9681a68ebd07f5",
+   "page": 67
+  },
+  {
+   "text": "After a landslide, stay away from the slide area; there may be danger of additional slides.",
+   "doc": "9681a68ebd07f5",
+   "page": 68
+  },
+  {
+   "text": "Sheltering indoors from volcanic ash may not be possible for more than a few hours: the weight of the ash could collapse the roof and block air intakes.",
+   "doc": "9681a68ebd07f5",
+   "page": 109
+  },
+  {
+   "text": "Never climb on a lava crust until the authorities say it is safe; the surface cools faster than the lava trapped inside.",
+   "doc": "9681a68ebd07f5",
+   "page": 110
   },
   {
    "text": "Young children and older adults should not use fire extinguishers; ask the fire department for training.",

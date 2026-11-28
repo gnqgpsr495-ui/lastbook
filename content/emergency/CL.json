@@ -1,0 +1,583 @@
+{
+  "country": "Chile",
+  "code": "CL",
+  "calling_code": "+56",
+  "languages": [
+    "es"
+  ],
+  "general": null,
+  "services": [
+    {
+      "kind": "ambulance",
+      "name": "SAMU",
+      "number": "131",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "ambulancia",
+          "samu",
+          "urgencia",
+          "emergencia"
+        ],
+        "en": [
+          "ambulance",
+          "emergency"
+        ]
+      },
+      "when": "Ambulance and medical emergencies, answered by Ministry of Health staff. Each Servicio de Salud sets up its own SAMU and is responsible for covering its territory, so how the service is organised can differ between Servicios de Salud.",
+      "source": [
+        "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+        "https://juridico1.minsal.cl/RESOLUCION_338_05.doc",
+        "https://transparencia.redsalud.gob.cl/transparencia/public/ssmetrocentral/archivos/A82A1FAAF11521D7E04001011E01580A",
+        "https://www.dipres.gob.cl/597/articles-15661_doc_pdf.pdf"
+      ],
+      "url": "https://www.samu.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "fire",
+      "name": "Bomberos",
+      "number": "132",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "bomberos",
+          "incendio",
+          "accidente",
+          "rescate",
+          "bomberas"
+        ],
+        "en": [
+          "fire",
+          "firefighters",
+          "rescue"
+        ]
+      },
+      "when": "Emergency calls answered by personnel of the Cuerpo de Bomberos de Chile.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://www.bomberos.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-22",
+      "verified": "official"
+    },
+    {
+      "kind": "police",
+      "name": "Carabineros de Chile",
+      "number": "133",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "carabineros",
+          "policía",
+          "robo",
+          "seguridad",
+          "carabineras"
+        ],
+        "en": [
+          "police",
+          "crime"
+        ]
+      },
+      "when": "Emergency calls answered by Carabineros: robberies, assaults, homicides, aggressions, traffic accidents and other events that seriously affect people.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://www.carabineros.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-22",
+      "verified": "official"
+    },
+    {
+      "kind": "police",
+      "name": "Policía de Investigaciones (PDI)",
+      "number": "134",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "pdi",
+          "investigaciones",
+          "delito",
+          "policía"
+        ],
+        "en": [
+          "police",
+          "crime",
+          "investigations"
+        ]
+      },
+      "when": "Calls answered by the Policía de Investigaciones, the civilian investigative police, which deals with complex crimes such as drug cases, scams and cybercrime.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://www.pdichile.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-22",
+      "verified": "official"
+    },
+    {
+      "kind": "fire",
+      "name": "Incendios forestales",
+      "number": "130",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "incendio forestal",
+          "incendios forestales",
+          "conaf",
+          "quema"
+        ],
+        "en": [
+          "wildfire",
+          "forest fire",
+          "bushfire"
+        ]
+      },
+      "when": "Emergency calls answered by CONAF staff: prevention and reports of forest fires.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://www.conaf.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-22",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Búsqueda y Salvamento Marítimo (Armada de Chile)",
+      "number": "137",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "rescate marítimo",
+          "armada",
+          "playa",
+          "roquería",
+          "náufrago",
+          "nave",
+          "puerto",
+          "mar",
+          "ahogamiento",
+          "náufraga"
+        ],
+        "en": [
+          "sea rescue",
+          "maritime rescue",
+          "navy",
+          "beach",
+          "coast",
+          "drowning",
+          "boat",
+          "drowning rescue"
+        ]
+      },
+      "when": "Emergency calls answered by the Armada de Chile: drowning rescue and accidents on beaches and rocks, port accidents, ships in distress and similar. Its search and rescue service covers the whole national maritime area of responsibility, from the coast to the high seas. At sea, a distress call (MAYDAY) on VHF radio channel 16, a maritime satellite service (Inmarsat, Iridium) or a 406 MHz distress beacon (EPIRB) also raises the alert.",
+      "source": [
+        "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+        "https://www.directemar.cl/directemar/site/docs/20200424/20200424112534/d_s__nr__1_190_de_1976.pdf",
+        "https://www.directemar.cl/directemar/site/docs/20170828/20170828112924/tm_021_actualizada_22_noviembre_2022.pdf"
+      ],
+      "url": "https://www.137.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-22",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Cuerpo de Socorro Andino de Chile",
+      "number": "136",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "socorro andino",
+          "cordillera",
+          "montaña",
+          "rescate",
+          "extraviado",
+          "extraviada"
+        ],
+        "en": [
+          "mountain rescue",
+          "mountains",
+          "hiking",
+          "lost",
+          "rescue"
+        ]
+      },
+      "when": "Emergency calls answered by the Cuerpo de Socorro Andino de Chile: accidents and emergencies in mountains and wild places, such as parks.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://socorroandinochile.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Rescate Aéreo (SAR), Fuerza Aérea de Chile",
+      "number": "138",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "rescate aéreo",
+          "fach",
+          "fuerza aérea",
+          "aeronave",
+          "extraviado",
+          "cordillera",
+          "catástrofe",
+          "extraviada"
+        ],
+        "en": [
+          "air rescue",
+          "air force",
+          "search and rescue",
+          "aircraft",
+          "lost person",
+          "disaster"
+        ]
+      },
+      "when": "Emergency calls answered by the Fuerza Aérea de Chile: search for aircraft and rescue of their occupants, search for lost or injured people in the mountains, and evacuation of victims during natural disasters.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://fach.mil.cl",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Fono Niños (Carabineros)",
+      "number": "147",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "niños",
+          "infancia",
+          "maltrato infantil",
+          "abuso sexual",
+          "menores",
+          "carabineros",
+          "niñas",
+          "carabineras"
+        ],
+        "en": [
+          "child abuse",
+          "children",
+          "child protection",
+          "sexual abuse",
+          "minors"
+        ]
+      },
+      "when": "Emergency calls answered by specialised Carabineros staff: threats to or violations of the rights of children and adolescents, in the area of child maltreatment and sexual abuse.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://www.chileatiende.gob.cl/fichas/385-fono-ninos-147",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Fono Familia (Carabineros)",
+      "number": "149",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.chileatiende.gob.cl/fichas/28630-fono-familia-149",
+      "keywords": {
+        "es": [
+          "violencia intrafamiliar",
+          "maltrato familiar",
+          "familia",
+          "denuncia",
+          "orientación",
+          "carabineros",
+          "vif",
+          "carabineras"
+        ],
+        "en": [
+          "domestic violence",
+          "family violence",
+          "family abuse",
+          "report",
+          "carabineros",
+          "domestic violence emergency"
+        ]
+      },
+      "when": "Free, confidential support and guidance for people who are or may be victims, witnesses or know of a case of domestic violence, with information and referral to public and private services. Open 24 hours, every day of the year. The service also activates the corresponding police procedures, to give help and support through specialised Carabineros staff (Dirección de Derechos Humanos y Protección de la Familia).",
+      "source": [
+        "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+        "https://www.chileatiende.gob.cl/fichas/28630-fono-familia-149"
+      ],
+      "url": "https://www.chileatiende.gob.cl/fichas/28630-fono-familia-149",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Fono Emergencia Mujer (SernamEG)",
+      "number": "1455",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=173931&idParte=8511373",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "violencia contra la mujer",
+          "violencia de género",
+          "maltrato",
+          "sernameg",
+          "mujer"
+        ],
+        "en": [
+          "violence against women",
+          "domestic violence",
+          "gender violence",
+          "abuse",
+          "women"
+        ]
+      },
+      "when": "Guidance for victims of violence against women, run by the Servicio Nacional de la Mujer y la Equidad de Género. Open every day of the year, 08:00 to 00:00.",
+      "source": "https://www.bcn.cl/leychile/navegar?idNorma=284665",
+      "url": "https://minmujeryeg.gob.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "Fono Emergencia Mujer (SernamEG), WhatsApp silencioso",
+      "number": "+56 9 9700 7000",
+      "how": [
+        "chat"
+      ],
+      "works_from": [],
+      "free": false,
+      "free_source": "https://minmujeryeg.gob.cl/?page_id=3361",
+      "keywords": {
+        "es": [
+          "whatsapp silencioso",
+          "violencia contra la mujer",
+          "violencia de género",
+          "whatsapp",
+          "sernameg",
+          "mujer"
+        ],
+        "en": [
+          "silent whatsapp",
+          "violence against women",
+          "gender violence",
+          "whatsapp",
+          "women"
+        ]
+      },
+      "when": "Silent WhatsApp line of the same service as 1455, every day of the year, 08:00 to 00:00 (not 24 hours). The service is free, but WhatsApp uses mobile data, so sending messages is not.",
+      "source": "https://minmujeryeg.gob.cl/?page_id=3361",
+      "url": "https://minmujeryeg.gob.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "poison",
+      "name": "CITUC (Centro de Información Toxicológica, Universidad Católica)",
+      "number": "+56 2 2635 3800",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://cituc.uc.cl/cituc-asistrencial/cituc-toxicologico/",
+      "free": false,
+      "free_source": "https://cituc.uc.cl/cituc-asistrencial/cituc-toxicologico/",
+      "keywords": {
+        "es": [
+          "intoxicación",
+          "envenenamiento",
+          "tóxico",
+          "toxicológica",
+          "cituc",
+          "tóxica",
+          "toxicológico"
+        ],
+        "en": [
+          "poison",
+          "poisoning",
+          "toxic"
+        ]
+      },
+      "when": "Toxicological emergencies, answered by health professionals, 24 hours every day, nationwide. The service itself is free; the call is charged at standard landline rates.",
+      "source": "https://cituc.uc.cl/cituc-asistrencial/cituc-toxicologico/",
+      "url": "https://cituc.uc.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "other",
+      "name": "CITUC Químico (Centro de Emergencias Químicas, Universidad Católica)",
+      "number": "+56 2 2247 3600",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile",
+        "landline"
+      ],
+      "works_from_source": "https://cituc.uc.cl/cituc-asistrencial/cituc-quimico/",
+      "free": false,
+      "free_source": "https://cituc.uc.cl/cituc-asistrencial/cituc-quimico/",
+      "keywords": {
+        "es": [
+          "emergencia química",
+          "derrame",
+          "fuga",
+          "gas",
+          "incendio químico",
+          "sustancias peligrosas",
+          "cituc"
+        ],
+        "en": [
+          "chemical emergency",
+          "chemical spill",
+          "gas leak",
+          "hazardous materials",
+          "toxic fumes"
+        ]
+      },
+      "when": "Chemical emergencies (spills, fires, leaks, gas emissions), 24 hours every day. Gives recommendations to the public and to responders. The call is charged at standard landline rates.",
+      "source": "https://cituc.uc.cl/cituc-asistrencial/cituc-quimico/",
+      "url": "https://cituc.uc.cl/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-24",
+      "verified": "official"
+    },
+    {
+      "kind": "crisis",
+      "name": "Línea de Prevención del Suicidio (Ministerio de Salud)",
+      "number": "*4141",
+      "how": [
+        "call"
+      ],
+      "works_from": [
+        "mobile"
+      ],
+      "works_from_source": "https://www.minsal.cl/linea-de-atencion-4141-no-estas-solo-no-estas-sola/",
+      "free": true,
+      "free_source": "https://www.bcn.cl/leychile/navegar/imprimir?idNorma=1059429&idParte=9406426",
+      "keywords": {
+        "es": [
+          "suicidio",
+          "crisis",
+          "salud mental",
+          "no estás solo",
+          "no estás sola"
+        ],
+        "en": [
+          "suicide",
+          "suicide prevention",
+          "crisis line",
+          "mental health"
+        ]
+      },
+      "when": "Free, confidential support from a psychologist, every day, 24 hours, for people in a mental-health crisis linked to suicide. Call from a mobile phone of any carrier.",
+      "source": [
+        "https://www.minsal.cl/linea-de-atencion-4141-no-estas-solo-no-estas-sola/",
+        "https://www.bcn.cl/leychile/navegar?idNorma=1133741"
+      ],
+      "url": "https://portalsaluddigital.minsal.cl/teleasistencia/4141-linea-prevencion-del-suicidio/",
+      "area_whole_country": true,
+      "checked_on": "2026-11-23",
+      "verified": "official"
+    }
+  ]
+}

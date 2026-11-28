@@ -1,0 +1,4 @@
+{
+ "_about": "Countries whose detailed map sets packaging/state_maps.py may publish. Empty on purpose: the source layers are still US-only for detail, so a country build is only the low-zoom base. Country publishing is opt-in. Add a code here only after a source snapshot for that country passes the coverage check in packaging/state_maps.py (detailed roads, help and water points, terrain, buildings, crops and OpenStreetMap places inside the country box) and after setup users can see the set's attribution. The key is the country code from packaging/europe-countries.json. Listing a country here is not a claim that its whole map is complete.",
+ "countries": {}
+}

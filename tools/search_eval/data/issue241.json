@@ -1,0 +1,427 @@
+{
+ "note": "#241's 21 guide-search questions (app/tests/test_topic_search_emergency.py), labelled for the library search, blind. guide241 = #241's expected guide and choice, base241 = its recorded baseline.",
+ "cases": [
+  {
+   "group": "emergency",
+   "q": "treat water in the lungs after drowning",
+   "colour": "red",
+   "need": [
+    "DROWN",
+    "CPR"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "breathing"
+   ],
+   "base241": [
+    "water",
+    "keepclean"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "someone fell in the rainwater pool and is not breathing",
+   "colour": "red",
+   "need": [
+    "CPR",
+    "DROWN"
+   ],
+   "context": [
+    "C_POOL"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "breathing"
+   ],
+   "base241": [
+    "hurt",
+    "breathing"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "my son nearly drowned in the rainwater pool",
+   "colour": "red",
+   "need": [
+    "DROWN",
+    "CPR"
+   ],
+   "context": [
+    "C_POOL"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "breathing"
+   ],
+   "base241": [
+    "water",
+    "outside"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "i burnt my fingers lighting the campfire",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "burn"
+   ],
+   "base241": [
+    "hurt",
+    "heatcold"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "burned my hand trying to light a fire",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "burn"
+   ],
+   "base241": [
+    "disaster",
+    "earthquake-after"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "my clothes caught fire while starting the fire",
+   "colour": "red",
+   "need": [
+    "CLOTHES",
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "burn"
+   ],
+   "base241": [
+    "disaster",
+    "earthquake-after"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "i burned my hand on the camp stove",
+   "colour": "yellow",
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_TENT"
+   ],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "burn"
+   ],
+   "base241": [
+    "food",
+    "cook"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "my child swallowed lamp oil",
+   "colour": "red",
+   "need": [
+    "HYDROCARB"
+   ],
+   "context": [],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "poison"
+   ],
+   "base241": [
+    "hurt",
+    "poison"
+   ]
+  },
+  {
+   "group": "emergency",
+   "q": "carbon monoxide from making a fire in the tent",
+   "colour": "red",
+   "need": [
+    "CO"
+   ],
+   "context": [
+    "C_FIREMAKE",
+    "C_TENT"
+   ],
+   "not_first": [],
+   "guide241": [
+    "shelter",
+    "co"
+   ],
+   "base241": [
+    "shelter",
+    "damaged"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "not responding to antibiotics",
+   "colour": "yellow",
+   "need": [
+    "INFECT"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR",
+    "RECOVERY"
+   ],
+   "guide241": [
+    "health",
+    "medicine"
+   ],
+   "base241": [
+    "health",
+    "medicine"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "the pump is not responding",
+   "colour": "green",
+   "need": [
+    "PUMP"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR",
+    "RECOVERY"
+   ],
+   "guide241": [
+    "hurt",
+    "breathing"
+   ],
+   "base241": [
+    "hurt",
+    "breathing"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "choking on smoke",
+   "colour": "red",
+   "need": [
+    "SMOKEINH",
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [
+    "CHOKE"
+   ],
+   "guide241": [
+    "disaster",
+    "smoke"
+   ],
+   "base241": [
+    "disaster",
+    "smoke"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "allergic reaction choking",
+   "colour": "red",
+   "need": [
+    "ANAPH"
+   ],
+   "context": [],
+   "not_first": [
+    "CHOKE"
+   ],
+   "guide241": [
+    "hurt",
+    "allergy"
+   ],
+   "base241": [
+    "hurt",
+    "allergy"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "how do i light a campfire",
+   "colour": "green",
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ],
+   "guide241": [
+    "power",
+    null
+   ],
+   "base241": [
+    "power",
+    "first-hours"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "how do i start a fire",
+   "colour": "green",
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN",
+    "ESCAPE"
+   ],
+   "guide241": [
+    "disaster",
+    null
+   ],
+   "base241": [
+    "disaster",
+    "earthquake-after"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "boil water",
+   "colour": "green",
+   "need": [
+    "BOIL",
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": [],
+   "guide241": [
+    "water",
+    "unsafe"
+   ],
+   "base241": [
+    "water",
+    "unsafe"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "make a fire escape plan for my family",
+   "colour": "green",
+   "need": [
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [
+    "FIREMAKE",
+    "BURN"
+   ],
+   "guide241": [
+    "disaster",
+    null
+   ],
+   "base241": [
+    "disaster",
+    "earthquake-after"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "what could make a fire spread faster",
+   "colour": "green",
+   "need": [
+    "FIRESPREAD"
+   ],
+   "context": [],
+   "not_first": [
+    "FIREMAKE"
+   ],
+   "guide241": [
+    "disaster",
+    null
+   ],
+   "base241": [
+    "disaster",
+    "earthquake-after"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "trouble breathing",
+   "colour": "red",
+   "need": [
+    "ASTHMA",
+    "ANAPH"
+   ],
+   "context": [],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "allergy"
+   ],
+   "base241": [
+    "hurt",
+    "allergy"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "someone fainted",
+   "colour": "yellow",
+   "need": [
+    "FAINT"
+   ],
+   "context": [],
+   "not_first": [],
+   "guide241": [
+    "hurt",
+    "breathing"
+   ],
+   "base241": [
+    "hurt",
+    "breathing"
+   ]
+  },
+  {
+   "group": "counter",
+   "q": "food went bad",
+   "colour": "green",
+   "need": [
+    "FOODSPOIL"
+   ],
+   "context": [],
+   "not_first": [],
+   "guide241": [
+    "food",
+    null
+   ],
+   "base241": [
+    "food",
+    "outage"
+   ]
+  }
+ ]
+}

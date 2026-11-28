@@ -4,7 +4,8 @@ Run:  python3 app/tests/setup_stub.py [port]      (default 8925)
 Then open http://127.0.0.1:8925/__stub/<scenario> to reset to a scenario, which redirects to the setup page.
 Scenarios (see SCENARIOS): mac, mac-small (AI does not fit), win, found, low-disk, paused (a restart picked up a job),
 network, server, checksum, unpack, activate (each fails once at that step; Retry then goes through), busy (the server
-answers 503 for 2 minutes, then the download goes on), manage, manage-ai, upgraded.
+answers 503 for 2 minutes, then the download goes on), manage, manage-ai, upgraded,
+manage-notify (app update notices already on), updates-fail (saving the preference fails).
 The page itself never knows it talks to a stub.
 """
 import copy
@@ -110,6 +111,10 @@ SCENARIOS = {
     'upgraded': dict(mode='manage', hardware=hw(), current={'folder': MAC, 'pack': 'medium', 'model': None,
                      'old': [MAC + '.old-2026-11-12']},
                      recommend={'pack': 'medium', 'ai': True, 'why': ''}),
+    # "Notify me about app updates" already turned on (Settings shows it ticked); 'updates-fail': saving the setting fails
+    'manage-notify': dict(mode='manage', hardware=hw(), current={'folder': MAC, 'pack': 'small', 'model': None, 'map': 'base'},
+                          recommend={'pack': 'medium', 'ai': True, 'why': ''}, notify=True),
+    'updates-fail': dict(hardware=hw(), recommend={'pack': 'small', 'ai': False, 'why': 'Small fits.'}, updates_fail=True),
 }
 
 SCENARIOS['hostile']['hardware']['disks'][0]['name'] = X
@@ -130,6 +135,7 @@ class Stub:
         self.fault = s.get('fault')
         self.busy_until = None
         self.found = s.get('found', [])
+        self.notify = s.get('notify', False)     # as engine/update.py: off unless turned on
         self.folder = (self.current or {}).get('folder') or (WIN if s['hardware']['os'] == 'windows' else MAC)
         if 'job' in s:
             j = s['job']
@@ -370,6 +376,8 @@ class H(BaseHTTPRequestHandler):
         if p == '/api/setup/job':
             STUB.tick()
             return self.send(200, STUB.public())
+        if p == '/api/setup/updates':
+            return self.send(200, {'supported': True, 'notify': STUB.notify, 'available': None, 'checking': False})
         if p in ('/', ''):
             return self.send(200, b'<!doctype html><title>Library</title><h1>The library would open here.</h1><p><a href="/ui/setup.html#manage">Library and local AI</a>', 'text/html')
         if p.startswith('/ui/'):
@@ -408,6 +416,12 @@ class H(BaseHTTPRequestHandler):
             if STUB.s['hardware']['os'] == 'macos':
                 STUB.s['hardware']['disks'].append({'path': '/Volumes/Big Disk', 'name': 'Big Disk', 'free_bytes': 1800 * GB, 'total_bytes': 2000 * GB})
             return self.send(200, {'path': other, 'free_bytes': 1800 * GB, 'disk': 'Data (D:)' if STUB.s['hardware']['os'] == 'windows' else 'Big Disk'})
+        if a == 'updates':
+            if STUB.s.get('updates_fail'):
+                return self.send(400, {'error': 'Lastbook could not save this setting. Try again.', 'code': 'save'})
+            STUB.notify = body.get('notify') is True
+            print('stub: notify =', STUB.notify, flush=True)     # what a reviewer can watch: only a click on the box writes it
+            return self.send(200, {'supported': True, 'notify': STUB.notify, 'available': None, 'checking': False})
         if a == 'remove-ai':
             if STUB.current:
                 STUB.current['model'] = None

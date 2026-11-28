@@ -1,0 +1,498 @@
+{
+  "schema_version": 1,
+  "norm": "pt-1",
+  "region": "PT-30",
+  "index_filename": "PT-30.sqlite",
+  "description": "Address and place-search expectations for Madeira (PT-30), for the shared runtime work (#31), grown from the Portugal proposal (#297) and its Madeira pilot (#420). The twelve rows are verbatim rows of the live PT-30 index — the INE address register via the 2026-02-23 OpenAddresses upload — chosen to cover the pt-1 spelling rules and the shapes a Madeira query takes; tools/build_region_pt_30.py check covers the live index.",
+  "index_contract": {
+    "table": "addr(num TEXT, street TEXT, norm TEXT, city TEXT, state TEXT, zip TEXT, lat REAL, lon REAL, district TEXT)",
+    "indexes": [
+      "addr_norm ON addr(norm, num)",
+      "addr_zip ON addr(zip)"
+    ],
+    "meta": {
+      "region": "PT-30",
+      "norm": "pt-1",
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    "rules": [
+      "num is the register's house label with leading zeros stripped only when the rest is all digits ('007' becomes '7'; '0E', '013A' and '5 1J' stay as written)",
+      "norm is normalize_pt(street), scheme pt-1",
+      "city is the INE locality as the register spells it, upper case, sometimes with a municipality suffix, occasionally empty",
+      "state is PT-30 in every row; the district column is empty (the register has no district)",
+      "zip is the PT postcode NNNN-NNN stored without the hyphen",
+      "the index is a sidecar: map-set.json does not list it, as for the US state indexes"
+    ]
+  },
+  "address_rows": [
+    {
+      "id": "monumental-221",
+      "num": "221",
+      "street": "ESTR MONUMENTAL",
+      "norm": "estrada monumental",
+      "city": "FUNCHAL",
+      "state": "PT-30",
+      "zip": "9000100",
+      "district": "",
+      "lat": 32.638169,
+      "lon": -16.935049,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "er222-221",
+      "num": "221",
+      "street": "ER 222",
+      "norm": "estrada regional 222",
+      "city": "PONTA DO SOL",
+      "state": "PT-30",
+      "zip": "9360511",
+      "district": "",
+      "lat": 32.683646,
+      "lon": -17.096898,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "saojoao-108",
+      "num": "108",
+      "street": "ESTR S JOÃO",
+      "norm": "estrada sao joao",
+      "city": "RIBEIRA BRAVA",
+      "state": "PT-30",
+      "zip": "9350145",
+      "district": "",
+      "lat": 32.673002,
+      "lon": -17.048497,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "fonte-5-9000",
+      "num": "5",
+      "street": "BC FONTE",
+      "norm": "beco fonte",
+      "city": "FUNCHAL",
+      "state": "PT-30",
+      "zip": "9000118",
+      "district": "",
+      "lat": 32.639389,
+      "lon": -16.933167,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "fonte-5-9050",
+      "num": "5",
+      "street": "BC FONTE",
+      "norm": "beco fonte",
+      "city": "FUNCHAL",
+      "state": "PT-30",
+      "zip": "9050487",
+      "district": "",
+      "lat": 32.664292,
+      "lon": -16.915322,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "achada-39-funchal",
+      "num": "39",
+      "street": "CAM ACHADA",
+      "norm": "caminho achada",
+      "city": "FUNCHAL",
+      "state": "PT-30",
+      "zip": "9000208",
+      "district": "",
+      "lat": 32.654357,
+      "lon": -16.919247,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "achada-39-camacha",
+      "num": "39",
+      "street": "CAM ACHADA",
+      "norm": "caminho achada",
+      "city": "CAMACHA",
+      "state": "PT-30",
+      "zip": "9135030",
+      "district": "",
+      "lat": 32.682505,
+      "lon": -16.850786,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "santoamaro-5-1j",
+      "num": "5 1J",
+      "street": "R SANTO AMARO",
+      "norm": "rua santo amaro",
+      "city": "PORTO SANTO",
+      "state": "PT-30",
+      "zip": "9400075",
+      "district": "",
+      "lat": 33.0534,
+      "lon": -16.349313,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "meiavolta-11b",
+      "num": "11 B",
+      "street": "R MEIA VOLTA",
+      "norm": "rua meia volta",
+      "city": "PORTO SANTO",
+      "state": "PT-30",
+      "zip": "9400075",
+      "district": "",
+      "lat": 33.051609,
+      "lon": -16.349757,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "zarco-3",
+      "num": "3",
+      "street": "1 VEREDA JOÃO GONÇALVES ZARCO",
+      "norm": "1 vereda joao goncalves zarco",
+      "city": "CANIÇO",
+      "state": "PT-30",
+      "zip": "9125111",
+      "district": "",
+      "lat": 32.65112,
+      "lon": -16.847677,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "alvarojustino-013a",
+      "num": "013A",
+      "street": "R ALVARO JUSTINO MATOS",
+      "norm": "rua alvaro justino matos",
+      "city": "FUNCHAL",
+      "state": "PT-30",
+      "zip": "9050459",
+      "district": "",
+      "lat": 32.664331,
+      "lon": -16.914012,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    },
+    {
+      "id": "alvarojustino-13",
+      "num": "13",
+      "street": "R ÁLVARO JUSTINO MATOS",
+      "norm": "rua alvaro justino matos",
+      "city": "FUNCHAL",
+      "state": "PT-30",
+      "zip": "9050459",
+      "district": "",
+      "lat": 32.664749,
+      "lon": -16.914351,
+      "source": "Instituto Nacional de Estatística, I.P., via OpenAddresses (CC BY 4.0)"
+    }
+  ],
+  "normalization_examples": [
+    {
+      "input": "ESTR MONUMENTAL",
+      "expected": "estrada monumental"
+    },
+    {
+      "input": "Estrada Monumental",
+      "expected": "estrada monumental"
+    },
+    {
+      "input": "ER 222",
+      "expected": "estrada regional 222"
+    },
+    {
+      "input": "CAM S JOSE",
+      "expected": "caminho sao jose"
+    },
+    {
+      "input": "Caminho São José",
+      "expected": "caminho sao jose"
+    },
+    {
+      "input": "Caminho Sa\u0303o Jose\u0301",
+      "expected": "caminho sao jose",
+      "note": "a decomposed ã and é, as a Mac or iOS paste can give them"
+    },
+    {
+      "input": "BC FONTE",
+      "expected": "beco fonte"
+    },
+    {
+      "input": "1 VEREDA JOÃO GONÇALVES ZARCO",
+      "expected": "1 vereda joao goncalves zarco"
+    }
+  ],
+  "address_queries": [
+    {
+      "query": "ESTR MONUMENTAL 221",
+      "expected_fixture_ids": [
+        "monumental-221"
+      ],
+      "lookup": {
+        "norm": "estrada monumental",
+        "num": "221"
+      },
+      "expected_name": "ESTR MONUMENTAL 221",
+      "expected_detail": "FUNCHAL, PT-30, 9000100"
+    },
+    {
+      "query": "Estrada Monumental 221 Funchal",
+      "expected_fixture_ids": [
+        "monumental-221"
+      ],
+      "lookup": {
+        "norm": "estrada monumental",
+        "num": "221"
+      },
+      "filter": {
+        "place_prefix": "funchal"
+      }
+    },
+    {
+      "query": "estrada monumental 221, 9000-100 Funchal",
+      "expected_fixture_ids": [
+        "monumental-221"
+      ],
+      "lookup": {
+        "norm": "estrada monumental",
+        "num": "221"
+      },
+      "filter": {
+        "zip": "9000100",
+        "place_prefix": "funchal"
+      },
+      "note": "the postcode typed with its hyphen"
+    },
+    {
+      "query": "ER 222 221",
+      "expected_fixture_ids": [
+        "er222-221"
+      ],
+      "lookup": {
+        "norm": "estrada regional 222",
+        "num": "221"
+      },
+      "expected_name": "ER 222 221",
+      "expected_detail": "PONTA DO SOL, PT-30, 9360511"
+    },
+    {
+      "query": "Estrada Regional 222 221",
+      "expected_fixture_ids": [
+        "er222-221"
+      ],
+      "lookup": {
+        "norm": "estrada regional 222",
+        "num": "221"
+      },
+      "note": "the ER abbreviation spelled out"
+    },
+    {
+      "query": "ESTR S JOÃO 108",
+      "expected_fixture_ids": [
+        "saojoao-108"
+      ],
+      "lookup": {
+        "norm": "estrada sao joao",
+        "num": "108"
+      },
+      "expected_name": "ESTR S JOÃO 108",
+      "expected_detail": "RIBEIRA BRAVA, PT-30, 9350145"
+    },
+    {
+      "query": "Estrada São João 108, Ribeira Brava",
+      "expected_fixture_ids": [
+        "saojoao-108"
+      ],
+      "lookup": {
+        "norm": "estrada sao joao",
+        "num": "108"
+      },
+      "filter": {
+        "place_prefix": "ribeira brava"
+      }
+    },
+    {
+      "query": "BC FONTE 5",
+      "expected_fixture_ids": [
+        "fonte-5-9000",
+        "fonte-5-9050"
+      ],
+      "lookup": {
+        "norm": "beco fonte",
+        "num": "5"
+      },
+      "note": "two Beco Fonte streets carry a number 5 in Funchal; both answers, the postcode tells them apart"
+    },
+    {
+      "query": "Beco Fonte 5, 9050-487 Funchal",
+      "expected_fixture_ids": [
+        "fonte-5-9050"
+      ],
+      "lookup": {
+        "norm": "beco fonte",
+        "num": "5"
+      },
+      "filter": {
+        "zip": "9050487"
+      }
+    },
+    {
+      "query": "CAM ACHADA 39",
+      "expected_fixture_ids": [
+        "achada-39-funchal",
+        "achada-39-camacha"
+      ],
+      "lookup": {
+        "norm": "caminho achada",
+        "num": "39"
+      }
+    },
+    {
+      "query": "Caminho Achada 39 Camacha",
+      "expected_fixture_ids": [
+        "achada-39-camacha"
+      ],
+      "lookup": {
+        "norm": "caminho achada",
+        "num": "39"
+      },
+      "filter": {
+        "place_prefix": "camacha"
+      }
+    },
+    {
+      "query": "R SANTO AMARO 5 1J",
+      "expected_fixture_ids": [
+        "santoamaro-5-1j"
+      ],
+      "lookup": {
+        "norm": "rua santo amaro",
+        "num": "5 1J"
+      },
+      "expected_name": "R SANTO AMARO 5 1J",
+      "expected_detail": "PORTO SANTO, PT-30, 9400075",
+      "note": "a door label of two words: the whole label is the house, the live street numbers its doors 5 1G through 5 1L"
+    },
+    {
+      "query": "RUA MEIA VOLTA 11 B",
+      "expected_fixture_ids": [
+        "meiavolta-11b"
+      ],
+      "lookup": {
+        "norm": "rua meia volta",
+        "num": "11 B"
+      },
+      "expected_name": "R MEIA VOLTA 11 B",
+      "expected_detail": "PORTO SANTO, PT-30, 9400075"
+    },
+    {
+      "query": "R ALVARO JUSTINO MATOS 013A",
+      "expected_fixture_ids": [
+        "alvarojustino-013a"
+      ],
+      "lookup": {
+        "norm": "rua alvaro justino matos",
+        "num": "013A"
+      },
+      "expected_name": "R ALVARO JUSTINO MATOS 013A",
+      "expected_detail": "FUNCHAL, PT-30, 9050459",
+      "note": "the register's composite label keeps its zero: exact match only — the house 13 on the same street never answers for it"
+    },
+    {
+      "query": "R Álvaro Justino Matos 13",
+      "expected_fixture_ids": [
+        "alvarojustino-13"
+      ],
+      "lookup": {
+        "norm": "rua alvaro justino matos",
+        "num": "13"
+      },
+      "note": "the register writes this row's street with Á; the composed accent folds to the same key, and the neighbor stays a plain numeral"
+    }
+  ],
+  "no_house_queries": [
+    {
+      "query": "ESTR MONUMENTAL 222",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "estrada monumental",
+        "num": "222"
+      }
+    },
+    {
+      "query": "ER 222 221, 9000-100 Funchal",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "estrada regional 222",
+        "num": "221"
+      },
+      "filter": {
+        "zip": "9000100",
+        "place_prefix": "funchal"
+      },
+      "note": "a real house behind another street's postcode and city"
+    },
+    {
+      "query": "Caminho Achada 39 Machico",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "caminho achada",
+        "num": "39"
+      },
+      "filter": {
+        "place_prefix": "machico"
+      }
+    },
+    {
+      "query": "RUA MEIA VOLTA 11",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "rua meia volta",
+        "num": "11"
+      },
+      "note": "the live street holds 11 A through 11 D and no bare 11, so only an exact match can return nothing here"
+    },
+    {
+      "query": "R SANTO AMARO 5 1Z",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "rua santo amaro",
+        "num": "5 1Z"
+      }
+    }
+  ],
+  "place_queries": [
+    {
+      "query": "Funchal",
+      "must_not_be_address": true
+    },
+    {
+      "query": "Porto Santo",
+      "must_not_be_address": true
+    },
+    {
+      "query": "9000",
+      "must_not_be_address": true,
+      "note": "the CP4 postcode area people search"
+    },
+    {
+      "query": "SEIXAL",
+      "must_not_be_address": true,
+      "note": "the register spells this locality 'SEIXAL PMZ', with the municipality suffix"
+    },
+    {
+      "query": "1 VEREDA JOÃO GONÇALVES ZARCO",
+      "must_not_be_address": true,
+      "note": "the leading 1 belongs to the street name, not a house"
+    },
+    {
+      "query": "ESTR MONUMENTAL",
+      "must_not_be_address": true,
+      "note": "a street without a number: the street list, not a house"
+    }
+  ],
+  "runtime_requirements": [
+    "An index whose meta says norm = pt-1 is searched only with that rule, and US indexes (no norm key) only with the US rule.",
+    "With PT-30.sqlite installed, every answer from an existing US index stays identical, including its Overture Maps credit.",
+    "A PT address is written street first (ESTR MONUMENTAL 221), so a result names the house street first, keeps the register's spelling, and credits the index meta source.",
+    "Only an exact house label matches: 222 never falls back to 221, a bare 11 never returns 11 B, and the house 13 never answers for the label 013A beside it.",
+    "A label that is not a plain numeral ('5 1J', '11 B') is kept and matched in either case, so '5 1j' finds '5 1J'.",
+    "The postcode is stored without the hyphen; a query types 9000-100, so the lookup strips the punctuation before comparing, as the US rule does.",
+    "The detail line is the US join over what the row holds (city, PT-30, zip) — the register's city in its own spelling, upper case, sometimes with a municipality suffix ('SEIXAL PMZ'), occasionally empty."
+  ]
+}

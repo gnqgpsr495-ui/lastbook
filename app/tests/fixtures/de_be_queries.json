@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "norm": "de-1",
+  "region": "DE-BE",
+  "index_filename": "DE-BE.sqlite",
+  "description": "Address and place-search expectations for Berlin, for the shared runtime work (#79, #31). The eight address rows are synthetic, written for these cases: every street name is in the live DE-BE index, but several of the houses, postcodes and localities are not, so the rows are not Berlin data. tools/build_region_de_be.py check covers the live index.",
+  "index_contract": {
+    "table": "addr(num TEXT, street TEXT, norm TEXT, city TEXT, state TEXT, zip TEXT, lat REAL, lon REAL, district TEXT)",
+    "indexes": [
+      "addr_norm ON addr(norm, num)",
+      "addr_zip ON addr(zip)"
+    ],
+    "meta": {
+      "region": "DE-BE",
+      "norm": "de-1",
+      "source": "Geoportal Berlin (dl-de/zero-2.0)"
+    },
+    "rules": [
+      "num is the house number without leading zeros, with a one-letter suffix in upper case (12A)",
+      "norm is normalize_de(street), scheme de-1",
+      "city is Berlin and district the Ortsteil",
+      "state is DE-BE in every row; a bare DE is Delaware",
+      "the index is a sidecar: map-set.json does not list it, as for the US state indexes"
+    ]
+  },
+  "address_rows": [
+    {
+      "id": "linden-77",
+      "num": "77",
+      "street": "Unter den Linden",
+      "norm": "unter den linden",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "10117",
+      "district": "Mitte",
+      "lat": 52.517,
+      "lon": 13.3888,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "mueller-12",
+      "num": "12",
+      "street": "Müllerstraße",
+      "norm": "muellerstr",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "13353",
+      "district": "Wedding",
+      "lat": 52.548,
+      "lon": 13.36,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "mueller-12a",
+      "num": "12A",
+      "street": "Müllerstraße",
+      "norm": "muellerstr",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "13353",
+      "district": "Wedding",
+      "lat": 52.5481,
+      "lon": 13.3601,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "juni-135",
+      "num": "135",
+      "street": "Straße des 17. Juni",
+      "norm": "str des 17 juni",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "10623",
+      "district": "Tiergarten",
+      "lat": 52.513,
+      "lon": 13.327,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "oranien-25",
+      "num": "25",
+      "street": "Oranienstraße",
+      "norm": "oranienstr",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "10999",
+      "district": "Kreuzberg",
+      "lat": 52.501,
+      "lon": 13.419,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "haupt-5-schoeneberg",
+      "num": "5",
+      "street": "Hauptstraße",
+      "norm": "hauptstr",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "10827",
+      "district": "Schöneberg",
+      "lat": 52.488,
+      "lon": 13.353,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "haupt-5-rahnsdorf",
+      "num": "5",
+      "street": "Hauptstraße",
+      "norm": "hauptstr",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "12589",
+      "district": "Rahnsdorf",
+      "lat": 52.44,
+      "lon": 13.69,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    },
+    {
+      "id": "lindenstr-77",
+      "num": "77",
+      "street": "Lindenstraße",
+      "norm": "lindenstr",
+      "city": "Berlin",
+      "state": "DE-BE",
+      "zip": "10969",
+      "district": "Kreuzberg",
+      "lat": 52.503,
+      "lon": 13.398,
+      "source": "Geoportal Berlin, Adressen Berlin (dl-de/zero-2.0)"
+    }
+  ],
+  "normalization_examples": [
+    {
+      "input": "Müllerstraße",
+      "expected": "muellerstr"
+    },
+    {
+      "input": "Muellerstrasse",
+      "expected": "muellerstr"
+    },
+    {
+      "input": "MÜLLERSTRASSE",
+      "expected": "muellerstr"
+    },
+    {
+      "input": "Müllerstr.",
+      "expected": "muellerstr"
+    },
+    {
+      "input": "Straße des 17. Juni",
+      "expected": "str des 17 juni"
+    },
+    {
+      "input": "Karl-Marx-Str.",
+      "expected": "karl marx str"
+    },
+    {
+      "input": "Hauptstrasse",
+      "expected": "hauptstr"
+    },
+    {
+      "input": "Hauptstraße",
+      "expected": "hauptstr"
+    }
+  ],
+  "address_queries": [
+    {
+      "query": "Unter den Linden 77",
+      "expected_fixture_ids": [
+        "linden-77"
+      ],
+      "lookup": {
+        "norm": "unter den linden",
+        "num": "77"
+      },
+      "expected_name": "Unter den Linden 77",
+      "expected_detail": "10117 Berlin-Mitte"
+    },
+    {
+      "query": "unter den linden 77, 10117 Berlin",
+      "expected_fixture_ids": [
+        "linden-77"
+      ],
+      "lookup": {
+        "norm": "unter den linden",
+        "num": "77"
+      },
+      "filter": {
+        "zip": "10117",
+        "place_prefix": "berlin"
+      },
+      "expected_name": "Unter den Linden 77",
+      "expected_detail": "10117 Berlin-Mitte"
+    },
+    {
+      "query": "Unter den Linden 77 10117",
+      "expected_fixture_ids": [
+        "linden-77"
+      ],
+      "lookup": {
+        "norm": "unter den linden",
+        "num": "77"
+      },
+      "filter": {
+        "zip": "10117"
+      },
+      "expected_name": "Unter den Linden 77",
+      "expected_detail": "10117 Berlin-Mitte"
+    },
+    {
+      "query": "Müllerstr. 12a",
+      "expected_fixture_ids": [
+        "mueller-12a"
+      ],
+      "lookup": {
+        "norm": "muellerstr",
+        "num": "12A"
+      },
+      "expected_name": "Müllerstraße 12A"
+    },
+    {
+      "query": "Müllerstraße 12 a",
+      "expected_fixture_ids": [
+        "mueller-12a"
+      ],
+      "lookup": {
+        "norm": "muellerstr",
+        "num": "12A"
+      },
+      "expected_name": "Müllerstraße 12A"
+    },
+    {
+      "query": "Muellerstrasse 12A",
+      "expected_fixture_ids": [
+        "mueller-12a"
+      ],
+      "lookup": {
+        "norm": "muellerstr",
+        "num": "12A"
+      },
+      "expected_name": "Müllerstraße 12A"
+    },
+    {
+      "query": "MÜLLERSTRASSE 12A, 13353 Berlin",
+      "expected_fixture_ids": [
+        "mueller-12a"
+      ],
+      "lookup": {
+        "norm": "muellerstr",
+        "num": "12A"
+      },
+      "filter": {
+        "zip": "13353",
+        "place_prefix": "berlin"
+      },
+      "expected_name": "Müllerstraße 12A"
+    },
+    {
+      "query": "Straße des 17. Juni 135",
+      "expected_fixture_ids": [
+        "juni-135"
+      ],
+      "lookup": {
+        "norm": "str des 17 juni",
+        "num": "135"
+      },
+      "expected_name": "Straße des 17. Juni 135"
+    },
+    {
+      "query": "Oranienstraße 25 Kreuzberg",
+      "expected_fixture_ids": [
+        "oranien-25"
+      ],
+      "lookup": {
+        "norm": "oranienstr",
+        "num": "25"
+      },
+      "filter": {
+        "place_prefix": "kreuzberg"
+      },
+      "expected_name": "Oranienstraße 25",
+      "expected_detail": "10999 Berlin-Kreuzberg"
+    },
+    {
+      "query": "Oranienstr 25 kreuz",
+      "expected_fixture_ids": [
+        "oranien-25"
+      ],
+      "lookup": {
+        "norm": "oranienstr",
+        "num": "25"
+      },
+      "filter": {
+        "place_prefix": "kreuz"
+      }
+    },
+    {
+      "query": "Hauptstraße 5 Schöneberg",
+      "expected_fixture_ids": [
+        "haupt-5-schoeneberg"
+      ],
+      "lookup": {
+        "norm": "hauptstr",
+        "num": "5"
+      },
+      "filter": {
+        "place_prefix": "schoeneberg"
+      },
+      "expected_detail": "10827 Berlin-Schöneberg"
+    },
+    {
+      "query": "Hauptstraße 5 Berlin-Rahnsdorf",
+      "expected_fixture_ids": [
+        "haupt-5-rahnsdorf"
+      ],
+      "lookup": {
+        "norm": "hauptstr",
+        "num": "5"
+      },
+      "filter": {
+        "place_prefix": "berlin rahnsdorf"
+      },
+      "expected_detail": "12589 Berlin-Rahnsdorf"
+    },
+    {
+      "query": "Hauptstraße 5 Berlin",
+      "expected_fixture_ids": [
+        "haupt-5-schoeneberg",
+        "haupt-5-rahnsdorf"
+      ],
+      "lookup": {
+        "norm": "hauptstr",
+        "num": "5"
+      },
+      "filter": {
+        "place_prefix": "berlin"
+      }
+    }
+  ],
+  "no_house_queries": [
+    {
+      "query": "Unter den Linden 78",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "unter den linden",
+        "num": "78"
+      }
+    },
+    {
+      "query": "Müllerstraße 12b",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "muellerstr",
+        "num": "12B"
+      }
+    },
+    {
+      "query": "Oranienstraße 25 Spandau",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "oranienstr",
+        "num": "25"
+      },
+      "filter": {
+        "place_prefix": "spandau"
+      }
+    },
+    {
+      "query": "Oranienstraße 25, 10117 Berlin",
+      "expected_fixture_ids": [],
+      "lookup": {
+        "norm": "oranienstr",
+        "num": "25"
+      },
+      "filter": {
+        "zip": "10117",
+        "place_prefix": "berlin"
+      }
+    }
+  ],
+  "place_queries": [
+    {
+      "query": "10117 Berlin",
+      "must_not_be_address": true,
+      "note": "a postcode and a place; number-first like a US address"
+    },
+    {
+      "query": "10117",
+      "must_not_be_address": true
+    },
+    {
+      "query": "Berlin",
+      "must_not_be_address": true
+    },
+    {
+      "query": "Kreuzberg",
+      "must_not_be_address": true
+    },
+    {
+      "query": "Straße des 17. Juni",
+      "must_not_be_address": true,
+      "note": "the 17 is part of the street name, not a house"
+    },
+    {
+      "query": "Route 66",
+      "must_not_be_address": true,
+      "note": "German shape, but no such house: the place search answers"
+    }
+  ],
+  "runtime_requirements": [
+    "An index whose meta says norm = de-1 is searched only with that rule, and US indexes (no norm key) only with the US rule.",
+    "With DE-BE.sqlite installed, every answer from an existing US index stays identical, including its Overture Maps credit.",
+    "A bare DE query (77 Linden DE, 77 Linden Delaware) reads DE.sqlite only, never DE-BE.sqlite.",
+    "A result names the house the German way (Unter den Linden 77, 10117 Berlin-Mitte) and credits the index meta source.",
+    "Only an exact house number is returned: 78 never falls back to 77, nor 12B to 12 or 12A."
+  ]
+}

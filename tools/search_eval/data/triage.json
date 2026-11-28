@@ -1,0 +1,2476 @@
+{
+ "note": "The triage set: questions a frightened person might type, grouped by topic, with typo versions. colour red = act now, yellow = injury or illness without a danger sign, green = how-to and preparation. Invented situations only. Case ids: '<topic index>.<phrasing>', and '.t<n>' for typo versions.",
+ "id_prefix": "",
+ "topics": [
+  {
+   "colour": "red",
+   "topic": "adult not breathing",
+   "qs": [
+    "my husband collapsed and isn't breathing",
+    "man fell down not breathing no pulse",
+    "he stopped breathing what do i do"
+   ],
+   "need": [
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "my husbnd colapsed and isnt breating",
+    "he stoped breathin wat do i do"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "child not breathing",
+   "qs": [
+    "my son isn't breathing",
+    "kid not breathing and lips are blue"
+   ],
+   "need": [
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "my sun isnt brething",
+    "kid not breating lips blu"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "baby not breathing",
+   "qs": [
+    "my baby is not breathing",
+    "infant stopped breathing in the crib"
+   ],
+   "need": [
+    "CPR",
+    "NEWBORN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "my bby is not breathng",
+    "infnt stoped breathing"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "adult choking",
+   "qs": [
+    "he is choking on food and cannot talk",
+    "someone choking at dinner"
+   ],
+   "need": [
+    "CHOKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "hes chocking on food cant talk",
+    "somone chokin at diner"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "baby choking",
+   "qs": [
+    "my baby is choking on a grape",
+    "toddler choking on a coin"
+   ],
+   "need": [
+    "CHOKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "baby chokeing on grape",
+    "todler choking on coin"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "unconscious but breathing",
+   "qs": [
+    "she is unconscious but breathing",
+    "he passed out and will not wake up"
+   ],
+   "need": [
+    "RECOVERY",
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "she is unconsious but breathing",
+    "he pased out wont wake up"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "severe asthma",
+   "qs": [
+    "asthma attack and no inhaler",
+    "she can't breathe, wheezing badly"
+   ],
+   "need": [
+    "ASTHMA"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "asma attack no inhaler",
+    "she cant breath wheezing bad"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "anaphylaxis",
+   "qs": [
+    "throat swelling after a bee sting",
+    "allergic reaction and her lips are swelling",
+    "peanut allergy can not breathe"
+   ],
+   "need": [
+    "ANAPH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "throat sweling after bee sting",
+    "alergic reaction lips sweling"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "smoke inhalation",
+   "qs": [
+    "smoke inhalation from a house fire",
+    "he breathed in a lot of smoke and is coughing"
+   ],
+   "need": [
+    "SMOKEINH"
+   ],
+   "context": [
+    "C_HOUSEFIRE"
+   ],
+   "not_first": [],
+   "typos": [
+    "smoke inhilation from house fire"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "carbon monoxide",
+   "qs": [
+    "headache and dizzy after running the generator inside",
+    "carbon monoxide poisoning symptoms whole family sick"
+   ],
+   "need": [
+    "CO"
+   ],
+   "context": [
+    "C_GENERATOR"
+   ],
+   "not_first": [],
+   "typos": [
+    "carbon monoxid poisoning",
+    "hedache dizy generator inside"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "carbon monoxide in tent",
+   "qs": [
+    "carbon monoxide from making a fire in the tent"
+   ],
+   "need": [
+    "CO"
+   ],
+   "context": [
+    "C_FIREMAKE",
+    "C_TENT"
+   ],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "red",
+   "topic": "severe bleeding",
+   "qs": [
+    "blood is spurting from his leg and won't stop",
+    "deep cut on the arm bleeding a lot",
+    "someone is full of blood, it does not stop"
+   ],
+   "need": [
+    "BLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "blod spurting from his leg wont stop",
+    "bleding alot from arm",
+    "bleeeding wont stop"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "amputation",
+   "qs": [
+    "his finger got cut off",
+    "chainsaw cut his leg badly"
+   ],
+   "need": [
+    "AMPUT",
+    "BLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "his fingr got cut of",
+    "chainsaw cut his leg bad"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "stab chest",
+   "qs": [
+    "stabbed in the chest",
+    "knife wound to the chest and he is struggling to breathe"
+   ],
+   "need": [
+    "CHESTWOUND",
+    "BLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "stabed in the chest"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "impaled object",
+   "qs": [
+    "a stick is stuck in his leg",
+    "nail went through her foot and is still in"
+   ],
+   "need": [
+    "IMPALE",
+    "BLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "stik stuck in his leg"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "heart attack",
+   "qs": [
+    "chest pain spreading to his left arm",
+    "i think my dad is having a heart attack"
+   ],
+   "need": [
+    "HEART"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "chest pian left arm",
+    "dad having a hart attack"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "shock after injury",
+   "qs": [
+    "he is pale cold and sweaty after the accident",
+    "signs of shock after bleeding"
+   ],
+   "need": [
+    "SHOCK",
+    "BLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "pale cold sweaty after acident"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "dog attack",
+   "qs": [
+    "dog attacked my child and she is bleeding badly"
+   ],
+   "need": [
+    "BLEED",
+    "BITE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "dog atacked my child bleding bad"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "stroke",
+   "qs": [
+    "her face is drooping and she can not speak properly",
+    "sudden weakness on one side of the body"
+   ],
+   "need": [
+    "STROKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "her face is droping cant speek",
+    "sudden weaknes one side"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "seizure",
+   "qs": [
+    "he is having a seizure",
+    "she is shaking and foaming at the mouth"
+   ],
+   "need": [
+    "SEIZURE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "hes having a siezure",
+    "having a seazure"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "febrile seizure",
+   "qs": [
+    "my baby has a high fever and is shaking all over"
+   ],
+   "need": [
+    "SEIZURE",
+    "FEVER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "baby high fevr shaking all over"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "head injury",
+   "qs": [
+    "hit his head and is vomiting and confused",
+    "fell and hit her head now very sleepy"
+   ],
+   "need": [
+    "HEAD"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "hit his hed vomiting confussed"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "spinal injury",
+   "qs": [
+    "fell off the roof and can not move his legs",
+    "neck hurts after a fall, numb arms"
+   ],
+   "need": [
+    "SPINE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "fell of the roof cant move legs"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "low blood sugar",
+   "qs": [
+    "diabetic and shaking, confused, sweating",
+    "my diabetic son is not making sense"
+   ],
+   "need": [
+    "SUGAR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "diabetik shaking confused"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "opioid overdose",
+   "qs": [
+    "overdose, he is barely breathing and lips are blue",
+    "took too many pain pills, will not wake"
+   ],
+   "need": [
+    "OPIOID",
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "overdoes barely breathing"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "meningitis",
+   "qs": [
+    "baby has fever and a rash that does not fade",
+    "stiff neck high fever and purple spots"
+   ],
+   "need": [
+    "MENING",
+    "FEVER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "baby fever rash doesnt fade"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "suicidal",
+   "qs": [
+    "my friend says he wants to kill himself",
+    "i do not want to live anymore"
+   ],
+   "need": [
+    "SUICIDE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "frend says he wants to kill himslef"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "drowning",
+   "qs": [
+    "treat water in the lungs after drowning",
+    "my son nearly drowned in the rainwater pool",
+    "someone fell in the rainwater pool and isn't breathing",
+    "pulled him out of the river, not breathing"
+   ],
+   "need": [
+    "DROWN",
+    "CPR"
+   ],
+   "context": [
+    "C_WATERTREAT",
+    "C_POOL"
+   ],
+   "not_first": [],
+   "typos": [
+    "my son neary drownd in the pool",
+    "pulled him out of the rver not breathin"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "through the ice",
+   "qs": [
+    "he fell through the ice on the lake",
+    "friend fell through thin ice"
+   ],
+   "need": [
+    "ICE",
+    "HYPOTHERM"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "fell thru the ice"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "electrocution",
+   "qs": [
+    "someone got shocked by a wire in the flood water",
+    "he touched a power line and collapsed",
+    "electric shock from a fallen wire"
+   ],
+   "need": [
+    "ELEC",
+    "CPR"
+   ],
+   "context": [
+    "C_FLOOD"
+   ],
+   "not_first": [],
+   "typos": [
+    "shoked by a wire in flood water",
+    "elecrtic shock fallen wire"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "lightning strike",
+   "qs": [
+    "my friend was struck by lightning"
+   ],
+   "need": [
+    "LIGHTNING",
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "struck by lightening"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "major burn",
+   "qs": [
+    "her whole arm is badly burned",
+    "boiling water spilled on the baby"
+   ],
+   "need": [
+    "BURN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "whole arm badly burnd",
+    "boiling water spiled on the baby"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "burn and not breathing",
+   "qs": [
+    "burn and not breathing",
+    "pulled him out of the fire, burned and not breathing"
+   ],
+   "need": [
+    "CPR",
+    "BURN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "burnt and not breething"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "clothes on fire",
+   "qs": [
+    "my clothes caught fire",
+    "his shirt is on fire",
+    "my clothes caught fire while starting the fire"
+   ],
+   "need": [
+    "CLOTHES",
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "typos": [
+    "my cloths caught fire"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "severe hypothermia",
+   "qs": [
+    "found him in the snow, cold and not shivering anymore",
+    "hypothermia after falling in cold water"
+   ],
+   "need": [
+    "HYPOTHERM"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "hypothermai after falling in cold water"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "heat stroke",
+   "qs": [
+    "he was working in the sun and now he is confused and hot",
+    "heat stroke what to do"
+   ],
+   "need": [
+    "HEATSTROKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "heat strok what to do"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "snakebite",
+   "qs": [
+    "a snake bit my leg",
+    "bitten by a rattlesnake",
+    "snake bite while camping"
+   ],
+   "need": [
+    "SNAKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "snak bit my leg",
+    "biten by a ratlesnake"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "crush",
+   "qs": [
+    "his legs are trapped under a fallen wall",
+    "someone trapped under rubble after the earthquake"
+   ],
+   "need": [
+    "CRUSH"
+   ],
+   "context": [
+    "C_QUAKE"
+   ],
+   "not_first": [],
+   "typos": [
+    "legs traped under fallen wall"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "car crash",
+   "qs": [
+    "car crash, the driver is trapped and bleeding",
+    "motorcycle accident he is not moving"
+   ],
+   "need": [
+    "CRASH",
+    "BLEED"
+   ],
+   "context": [
+    "C_CAR"
+   ],
+   "not_first": [],
+   "typos": [
+    "car crsh driver traped"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "chemical in eye",
+   "qs": [
+    "splashed bleach in my eye",
+    "chemical in my eyes and it burns"
+   ],
+   "need": [
+    "EYECHEM"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "splahsed bleach in my eye"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "avalanche",
+   "qs": [
+    "friend buried in an avalanche"
+   ],
+   "need": [
+    "AVALANCHE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "red",
+   "topic": "child bleach",
+   "qs": [
+    "my toddler drank bleach",
+    "kid swallowed drain cleaner"
+   ],
+   "need": [
+    "CAUSTIC"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "todler drank bleech",
+    "kid swalowed drain cleaner"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "lamp oil",
+   "qs": [
+    "my child swallowed lamp oil",
+    "kid drank kerosene"
+   ],
+   "need": [
+    "HYDROCARB"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "child swalowed lamp oil"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "pills child",
+   "qs": [
+    "my kid ate a bottle of pills",
+    "toddler got into grandma's medicine"
+   ],
+   "need": [
+    "POISON"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "kid ate a botle of pils"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "mushroom",
+   "qs": [
+    "ate wild mushrooms and now vomiting"
+   ],
+   "need": [
+    "POISON"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "ate wild mushroms vomiting"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "birth now",
+   "qs": [
+    "the baby is coming right now",
+    "water broke and i can see the head"
+   ],
+   "need": [
+    "BIRTH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "the baby is comming now",
+    "water broke i can see the hed"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "bleeding after birth",
+   "qs": [
+    "heavy bleeding after giving birth",
+    "she keeps bleeding after the baby came"
+   ],
+   "need": [
+    "PPH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "heavy bleding after giving birth"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "newborn not breathing",
+   "qs": [
+    "newborn baby is not breathing after birth"
+   ],
+   "need": [
+    "NEWBORN",
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "newbron not breathing"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "pregnant bleeding",
+   "qs": [
+    "pregnant and bleeding with bad pain"
+   ],
+   "need": [
+    "PREGBLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "pregant and bleeding"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "house fire",
+   "qs": [
+    "my house is on fire",
+    "fire in the house and kids are upstairs"
+   ],
+   "need": [
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "my hose is on fire",
+    "fier in the house"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "grease fire",
+   "qs": [
+    "grease fire in the pan",
+    "pour water on a grease fire",
+    "the oil in the pan caught fire"
+   ],
+   "need": [
+    "GREASE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "greese fire in the pan",
+    "oil in pan cought fire"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "electrical fire",
+   "qs": [
+    "the outlet is sparking and smoking",
+    "electrical fire in the wall"
+   ],
+   "need": [
+    "ELECFIRE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "outlet sparkling and smoking"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "chimney fire",
+   "qs": [
+    "chimney fire roaring sound"
+   ],
+   "need": [
+    "CHIMNEY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "chimny fire"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "gas leak",
+   "qs": [
+    "i smell gas in the house",
+    "gas leak from the stove"
+   ],
+   "need": [
+    "GASLEAK"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "i smel gas in the house",
+    "gas leek from stove"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "wildfire coming",
+   "qs": [
+    "wildfire is coming toward our house",
+    "fire on the hill, should we evacuate"
+   ],
+   "need": [
+    "WILDFIRE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "wildfrie coming to our house"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "car in flood",
+   "qs": [
+    "our car is stuck in rising flood water",
+    "water is coming into the car"
+   ],
+   "need": [
+    "FLOODCAR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "car stuk in rising flood water"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "tsunami",
+   "qs": [
+    "the sea pulled back after the earthquake",
+    "tsunami warning what do we do"
+   ],
+   "need": [
+    "TSUNAMI"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "tsunammi warning"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "earthquake now",
+   "qs": [
+    "the ground is shaking right now",
+    "earthquake happening what do i do"
+   ],
+   "need": [
+    "QUAKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "earthqauke happening"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "tornado",
+   "qs": [
+    "tornado coming where do we hide",
+    "tornado warning and no basement"
+   ],
+   "need": [
+    "TORNADO"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "tornado comming where to hide"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "shooter",
+   "qs": [
+    "someone is shooting in the mall",
+    "active shooter at school"
+   ],
+   "need": [
+    "SHOOTER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "some one is shoting in the mall"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "explosion injuries",
+   "qs": [
+    "explosion and people are bleeding",
+    "a bomb went off nearby"
+   ],
+   "need": [
+    "BLAST",
+    "BLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "explotion people bleeding"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "nuclear",
+   "qs": [
+    "nuclear explosion what do i do",
+    "radiation fallout coming"
+   ],
+   "need": [
+    "NUKE",
+    "SHELTERIN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "nucelar explosion"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "chemical release",
+   "qs": [
+    "chemical spill outside, told to shelter in place",
+    "toxic gas cloud near the factory"
+   ],
+   "need": [
+    "SHELTERIN",
+    "CHEM"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "chemcial spill outside"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "downed line",
+   "qs": [
+    "a power line fell on our car",
+    "downed power line in the yard"
+   ],
+   "need": [
+    "DOWNEDLINE"
+   ],
+   "context": [
+    "C_CAR"
+   ],
+   "not_first": [],
+   "typos": [
+    "power lien fell on car"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "intruder",
+   "qs": [
+    "someone is breaking into my house"
+   ],
+   "need": [
+    "INTRUDER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "someones braking into my house"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "landslide",
+   "qs": [
+    "mud is sliding down the hill toward the houses"
+   ],
+   "need": [
+    "LANDSLIDE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "red",
+   "topic": "hurricane now",
+   "qs": [
+    "hurricane is here and the roof is coming off"
+   ],
+   "need": [
+    "HURRICANE"
+   ],
+   "context": [
+    "C_STORM"
+   ],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "small burn",
+   "qs": [
+    "i burned my hand on the camp stove",
+    "burned my hand trying to light a fire",
+    "i burnt my fingers lighting the campfire",
+    "is it safe to put water on a burn"
+   ],
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "typos": [
+    "burnd my hand on the stove",
+    "brunt my fingers campfire"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "burn blister",
+   "qs": [
+    "how do i treat water blisters on a burn"
+   ],
+   "need": [
+    "BURN",
+    "BLISTER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "kid fell in fire",
+   "qs": [
+    "my kid fell into the fire while we were making a fire"
+   ],
+   "need": [
+    "BURN"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "cut",
+   "qs": [
+    "cut my finger with a knife",
+    "deep cut on my hand, does it need stitches"
+   ],
+   "need": [
+    "WOUND"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "cut my fingr with a knife"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "sprain",
+   "qs": [
+    "twisted my ankle hiking",
+    "sprained wrist swelling"
+   ],
+   "need": [
+    "SPRAIN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "twistd my ankel"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "broken arm",
+   "qs": [
+    "i think my arm is broken",
+    "broken leg no ambulance"
+   ],
+   "need": [
+    "FRACTURE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "i think my arm is brokn",
+    "brken leg"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "dislocation",
+   "qs": [
+    "shoulder popped out"
+   ],
+   "need": [
+    "FRACTURE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "nosebleed",
+   "qs": [
+    "nosebleed will not stop",
+    "kid has a nose bleed"
+   ],
+   "need": [
+    "NOSEBLEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "nosebled wont stop"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "tooth",
+   "qs": [
+    "tooth knocked out",
+    "bad toothache and swollen face"
+   ],
+   "need": [
+    "TOOTH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "tooth nocked out"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "bee sting",
+   "qs": [
+    "stung by a bee",
+    "wasp sting swelling"
+   ],
+   "need": [
+    "STING"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "stug by a bee"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "scorpion",
+   "qs": [
+    "scorpion sting on my foot"
+   ],
+   "need": [
+    "SCORPION"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "scorpoin sting on my foot"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "tick",
+   "qs": [
+    "tick on my leg how to remove"
+   ],
+   "need": [
+    "TICK"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "spider",
+   "qs": [
+    "spider bite turning red"
+   ],
+   "need": [
+    "SPIDER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "jellyfish",
+   "qs": [
+    "stung by a jellyfish"
+   ],
+   "need": [
+    "JELLY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "dog bite small",
+   "qs": [
+    "dog bit my hand, small wound",
+    "a stray dog bit me, rabies?"
+   ],
+   "need": [
+    "BITE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "dog bit my hand smal wound"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "poison ivy",
+   "qs": [
+    "rash from poison ivy",
+    "itchy rash after touching a plant"
+   ],
+   "need": [
+    "RASH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "diarrhea",
+   "qs": [
+    "drank creek water and now i have diarrhea",
+    "diarrhea for two days"
+   ],
+   "need": [
+    "DIARR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "diarea for two days",
+    "drank creek water now diarrea"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "water poisoning",
+   "qs": [
+    "how do i treat water poisoning"
+   ],
+   "need": [
+    "DIARR",
+    "POISON"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "vomiting child",
+   "qs": [
+    "my child keeps throwing up"
+   ],
+   "need": [
+    "VOMIT"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "my chlid keeps throwing up"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "fever child",
+   "qs": [
+    "my child has a fever",
+    "how to bring down a fever"
+   ],
+   "need": [
+    "CHILDFEVER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "child has a fevor"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "dehydration",
+   "qs": [
+    "signs of dehydration in a baby",
+    "baby very sleepy after diarrhea all day"
+   ],
+   "need": [
+    "DEHYD"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "frostbite",
+   "qs": [
+    "fingers are white and numb from the cold",
+    "frostbite on toes"
+   ],
+   "need": [
+    "FROSTBITE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "frost bite on toes"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "mild hypothermia",
+   "qs": [
+    "light a fire to keep him warm with hypothermia",
+    "shivering and cold after getting wet"
+   ],
+   "need": [
+    "HYPOTHERM"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "heat exhaustion",
+   "qs": [
+    "dizzy and sweating a lot in the heat",
+    "heat exhaustion treatment"
+   ],
+   "need": [
+    "HEATSTROKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "sunburn",
+   "qs": [
+    "bad sunburn with blisters"
+   ],
+   "need": [
+    "SUNBURN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "splinter",
+   "qs": [
+    "splinter deep in my finger"
+   ],
+   "need": [
+    "SPLINTER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "eye",
+   "qs": [
+    "something in my eye",
+    "dust in my eye will not come out"
+   ],
+   "need": [
+    "EYEFB"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "ear",
+   "qs": [
+    "my kid has an earache"
+   ],
+   "need": [
+    "EAR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "infected wound",
+   "qs": [
+    "the cut is red, hot and has pus",
+    "wound not healing after two weeks"
+   ],
+   "need": [
+    "INFECT",
+    "WOUND"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "panic",
+   "qs": [
+    "having a panic attack",
+    "i can not stop shaking after the storm"
+   ],
+   "need": [
+    "PANIC"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "grief",
+   "qs": [
+    "my kids are scared after the earthquake",
+    "how to cope after the disaster"
+   ],
+   "need": [
+    "GRIEF"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "minor head bump",
+   "qs": [
+    "kid bumped his head, he seems fine"
+   ],
+   "need": [
+    "HEAD"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "smoke eyes",
+   "qs": [
+    "my eyes sting from wildfire smoke"
+   ],
+   "need": [
+    "SMOKEINH",
+    "EYEFB"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "canned bulging",
+   "qs": [
+    "can is bulging, is it safe to eat",
+    "how can i know if my can food has gone bad"
+   ],
+   "need": [
+    "BOTUL",
+    "FOODSPOIL"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "purify water",
+   "qs": [
+    "how do i purify water from a creek",
+    "how do i make the water safe to drink",
+    "bleach to clean drinking water"
+   ],
+   "need": [
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "how do i purfy water",
+    "make watter safe to drink"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "boil water",
+   "qs": [
+    "how long to boil water to make it safe"
+   ],
+   "need": [
+    "BOIL",
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "formula water",
+   "qs": [
+    "how to make the water safe for a baby's formula"
+   ],
+   "need": [
+    "FORMULA",
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "store water",
+   "qs": [
+    "how much water to store for an emergency",
+    "how to store water long term"
+   ],
+   "need": [
+    "STOREWATER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "rainwater",
+   "qs": [
+    "collect rainwater for drinking"
+   ],
+   "need": [
+    "RAINWATER",
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "food power out",
+   "qs": [
+    "is the food in the fridge safe after the power went out"
+   ],
+   "need": [
+    "FOODSPOIL"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "water heater",
+   "qs": [
+    "use the water heater as emergency water"
+   ],
+   "need": [
+    "WATERHEATER",
+    "STOREWATER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "campfire",
+   "qs": [
+    "how do i light a campfire",
+    "i need to start a fire but i have no matches and no gas",
+    "start a fire with wet wood"
+   ],
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "how do i lite a campfire",
+    "start a fier no matches"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "extinguisher",
+   "qs": [
+    "how to use a fire extinguisher",
+    "which fire extinguisher for a kitchen"
+   ],
+   "need": [
+    "EXTING"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "how to use a fire extinguiser",
+    "fire extingisher how to use"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "smoke alarm",
+   "qs": [
+    "where to put smoke alarms"
+   ],
+   "need": [
+    "SMOKEALARM"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "co alarm",
+   "qs": [
+    "where to put a carbon monoxide detector"
+   ],
+   "need": [
+    "COALARM",
+    "CO"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "fire escape plan",
+   "qs": [
+    "make a fire escape plan for my family"
+   ],
+   "need": [
+    "ESCAPE",
+    "PLAN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "fire spread",
+   "qs": [
+    "what could make a fire spread faster"
+   ],
+   "need": [
+    "ESCAPE",
+    "WILDFIRE",
+    "FIREDRILL"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "defensible space",
+   "qs": [
+    "protect my house from wildfire",
+    "clear brush around the house for wildfire"
+   ],
+   "need": [
+    "DEFENSIBLE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "generator safety",
+   "qs": [
+    "how to run a generator safely"
+   ],
+   "need": [
+    "GENERATOR",
+    "CO"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "chimney care",
+   "qs": [
+    "how often to clean the chimney"
+   ],
+   "need": [
+    "CHIMNEY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "build shelter",
+   "qs": [
+    "how to build a shelter in the woods"
+   ],
+   "need": [
+    "SHELTER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "stay warm",
+   "qs": [
+    "stay warm without power in winter"
+   ],
+   "need": [
+    "WARM",
+    "HEATHOME"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "compass",
+   "qs": [
+    "how to use a compass"
+   ],
+   "need": [
+    "NAV"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "signal rescue",
+   "qs": [
+    "how to signal for rescue"
+   ],
+   "need": [
+    "SIGNAL"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "first aid kit",
+   "qs": [
+    "what goes in a first aid kit"
+   ],
+   "need": [
+    "KIT"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "make a splint",
+   "qs": [
+    "how to make a splint from sticks"
+   ],
+   "need": [
+    "SPLINT",
+    "FRACTURE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "latrine",
+   "qs": [
+    "how to dig a latrine"
+   ],
+   "need": [
+    "LATRINE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "handwashing",
+   "qs": [
+    "make a handwashing station"
+   ],
+   "need": [
+    "HANDWASH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "radio",
+   "qs": [
+    "emergency radio frequencies"
+   ],
+   "need": [
+    "RADIO"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "sandbags",
+   "qs": [
+    "how to sandbag the house for a flood"
+   ],
+   "need": [
+    "SANDBAG",
+    "FLOODPREP"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "secure furniture",
+   "qs": [
+    "secure furniture for earthquakes"
+   ],
+   "need": [
+    "SECURE",
+    "QUAKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "flood prep",
+   "qs": [
+    "prepare the house for a flood"
+   ],
+   "need": [
+    "FLOODPREP"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "water damage",
+   "qs": [
+    "how do i treat water damage on the floor"
+   ],
+   "need": [
+    "FLOODPREP"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "tornado prep",
+   "qs": [
+    "where is the safest place in a house during a tornado"
+   ],
+   "need": [
+    "TORNADO"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "shelter in place prep",
+   "qs": [
+    "how to seal a room for shelter in place"
+   ],
+   "need": [
+    "SHELTERIN"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "nuclear prep",
+   "qs": [
+    "how to prepare a fallout shelter"
+   ],
+   "need": [
+    "NUKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "volcano ash",
+   "qs": [
+    "protect yourself from volcanic ash"
+   ],
+   "need": [
+    "VOLCANO"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "hurricane prep",
+   "qs": [
+    "prepare for a hurricane"
+   ],
+   "need": [
+    "HURRICANE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "knots",
+   "qs": [
+    "how to tie a bowline"
+   ],
+   "need": [
+    "KNOT"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "home security",
+   "qs": [
+    "make my home harder to break into"
+   ],
+   "need": [
+    "INTRUDER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "unrest",
+   "qs": [
+    "what to do during riots in the city"
+   ],
+   "need": [
+    "UNREST"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "engine choke",
+   "qs": [
+    "the engine keeps choking when it is cold",
+    "how to use the choke on a small engine"
+   ],
+   "need": [
+    "ENGINE"
+   ],
+   "context": [],
+   "not_first": [
+    "CHOKE",
+    "CPR"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "bleed brakes",
+   "qs": [
+    "how to bleed the brakes"
+   ],
+   "need": [
+    "BRAKES"
+   ],
+   "context": [],
+   "not_first": [
+    "BLEED"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "bleed radiator",
+   "qs": [
+    "how to bleed a radiator"
+   ],
+   "need": [
+    "RADIATOR"
+   ],
+   "context": [],
+   "not_first": [
+    "BLEED"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "dead battery",
+   "qs": [
+    "the car battery is dead"
+   ],
+   "need": [
+    "CARBATT"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "dead phone",
+   "qs": [
+    "my phone is dead and no power"
+   ],
+   "need": [
+    "PHONE"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "shock absorber",
+   "qs": [
+    "the shock absorbers on the truck are broken"
+   ],
+   "need": [
+    "SUSPENSION"
+   ],
+   "context": [],
+   "not_first": [
+    "SHOCK",
+    "ELEC"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "electric fence",
+   "qs": [
+    "build an electric fence for goats"
+   ],
+   "need": [
+    "FENCE"
+   ],
+   "context": [],
+   "not_first": [
+    "ELEC"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "smoke fish",
+   "qs": [
+    "how to smoke fish to preserve it"
+   ],
+   "need": [
+    "SMOKEFOOD"
+   ],
+   "context": [],
+   "not_first": [
+    "SMOKEINH"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "burn barrel",
+   "qs": [
+    "how to use a burn barrel for trash"
+   ],
+   "need": [
+    "BURNBARREL"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "treated wood",
+   "qs": [
+    "is it safe to burn treated wood in the stove"
+   ],
+   "need": [
+    "FIREWOOD"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "flooded engine",
+   "qs": [
+    "flooded engine will not start"
+   ],
+   "need": [
+    "ENGINE"
+   ],
+   "context": [],
+   "not_first": [
+    "C_FLOOD",
+    "DROWN"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "rat poison",
+   "qs": [
+    "how to get rid of rats without poison"
+   ],
+   "need": [
+    "RODENT"
+   ],
+   "context": [],
+   "not_first": [
+    "POISON"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "fire not breathing",
+   "qs": [
+    "my fire is not getting enough air"
+   ],
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "fire drill",
+   "qs": [
+    "how to run a fire drill at home"
+   ],
+   "need": [
+    "FIREDRILL",
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [
+    "BURN"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "drowning plants",
+   "qs": [
+    "i am drowning my tomato plants with too much water"
+   ],
+   "need": [
+    "OVERWATER"
+   ],
+   "context": [],
+   "not_first": [
+    "DROWN"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "cut wood",
+   "qs": [
+    "how to cut firewood safely"
+   ],
+   "need": [
+    "WOODCUT",
+    "FIREWOOD"
+   ],
+   "context": [],
+   "not_first": [
+    "WOUND",
+    "BLEED"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "burn healing",
+   "qs": [
+    "how long do burns take to heal"
+   ],
+   "need": [
+    "BURN"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "yellow",
+   "topic": "not responding antibiotics",
+   "qs": [
+    "infection not responding to antibiotics"
+   ],
+   "need": [
+    "INFECT"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR",
+    "RECOVERY"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "heat the house",
+   "qs": [
+    "heat the house without power"
+   ],
+   "need": [
+    "HEATHOME"
+   ],
+   "context": [],
+   "not_first": [
+    "HEATSTROKE"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "cold storage",
+   "qs": [
+    "how to build a root cellar for cold storage"
+   ],
+   "need": [
+    "ROOTCELLAR"
+   ],
+   "context": [],
+   "not_first": [
+    "HYPOTHERM"
+   ],
+   "typos": []
+  },
+  {
+   "colour": "green",
+   "topic": "spring water",
+   "qs": [
+    "is spring water safe to drink"
+   ],
+   "need": [
+    "PURIFY",
+    "SPRING"
+   ],
+   "context": [],
+   "not_first": [
+    "DROWN"
+   ],
+   "typos": []
+  }
+ ]
+}

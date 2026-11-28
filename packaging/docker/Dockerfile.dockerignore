@@ -1,0 +1,29 @@
+# The build context is the top of the repository, and only what the server needs reaches it. Docker (BuildKit) reads
+# this file because it sits beside packaging/docker/Dockerfile; the Dockerfile's COPY lines name the same paths. The
+# legacy builder ignores this file, so the Dockerfile stops it before the first COPY. check_image.sh tests both
+# against a built image.
+*
+!server.py
+!assistant.py
+!retrieval.py
+!llm_local.py
+!LICENSE
+!THIRD_PARTY_NOTICES.md
+!engine/
+!web/
+!content/
+!packaging/docker/
+!packaging/linux/requirements_linux.txt
+
+# Never, even inside the folders above: settings, keys and anything local or generated.
+**/.git
+**/.env*
+**/*secret*
+**/*credential*
+**/*.key
+**/settings*.json
+**/__pycache__
+**/*.pyc
+**/.DS_Store
+web/home-area.json
+packaging/ship_edits.json

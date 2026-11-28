@@ -10,7 +10,7 @@ The rules this file carries out, as the Mac shell does (bridge.py decides, this 
   - A frame shows library paths only. Saved pages and encyclopedia entries carry the engine's sandbox policy, so they cannot open
     windows or move the top level: every new-window request and every top-level navigation comes from the app's own page.
   - Nothing reaches the network: NO_NETWORK (the same content rule list as on the Mac) blocks every load but the app's own, before the first page.
-    Nothing is ever handed to a browser or another program.
+    Only the explicit Contribute action opens the project repository in the system browser.
   - Video plays through GStreamer: H.264/AAC in MP4 needs gstreamer1.0-libav, WebM and the rest gstreamer1.0-plugins-good (the package depends on both,
     so WebKit never asks the system to go and find a codec). WebKit gives GStreamer a lastbook:// video address as it is; lastbooksrc, our own
     source element in /opt/lastbook/gst, reads it from the library's video folders (packaging/linux/gst/lastbooksrc.c).
@@ -47,6 +47,7 @@ gi.require_version('WebKit2', '4.1')
 from gi.repository import Gdk, Gio, GLib, Gtk, Soup, WebKit2   # noqa: E402
 
 import bridge as B   # noqa: E402
+from contribute import launch_project_repository   # noqa: E402
 
 APP_ID = 'org.lastbook.Lastbook'
 SCHEME = 'lastbook'
@@ -503,7 +504,7 @@ class Shell:
                 return self.decide_navigation(decision)
             if kind == WebKit2.PolicyDecisionType.NEW_WINDOW_ACTION:
                 a = decision.get_navigation_action()
-                self.leave(a.get_request().get_uri(), a.is_user_gesture())
+                self.leave(a.get_request().get_uri(), a.is_user_gesture(), popup=True)
                 decision.ignore()
                 return True
             if kind == WebKit2.PolicyDecisionType.RESPONSE:
@@ -557,14 +558,16 @@ class Shell:
         (decision.use if ok else decision.ignore)()
         return True
 
-    def leave(self, url, gesture):
+    def leave(self, url, gesture, *, popup=False):
         """The one window stays. Saved pages cannot ask for windows or the top level (their sandbox), so a request here is the app's own page's."""
-        what, where = self.bridge.new_window(str(url), True, gesture)
-        if what == 'inside':
+        what, where = self.bridge.new_window(str(url), True, gesture, popup=popup)
+        if what == 'contribute':
+            launch_project_repository()
+        elif what == 'inside':
             self.js('location.hash=' + json.dumps(where[len(HOME):] or '#/'))
 
     def on_create(self, view, action):
-        self.leave(action.get_request().get_uri(), action.is_user_gesture())
+        self.leave(action.get_request().get_uri(), action.is_user_gesture(), popup=True)
         return None
 
     def on_context_menu(self, view, menu, event, hit):

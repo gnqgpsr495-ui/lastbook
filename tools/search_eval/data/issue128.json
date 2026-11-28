@@ -1,0 +1,349 @@
+{
+ "note": "#128's (and issue #126's) example questions, including its reviewer's two counterexamples, labelled blind before any result was read. Same format as triage.json. Duplicates of triage.json left out.",
+ "id_prefix": "128.",
+ "topics": [
+  {
+   "colour": "green",
+   "topic": "make fire (128)",
+   "qs": [
+    "what is the best way to light a campfire",
+    "how to start a fire",
+    "make fire",
+    "fire tinder"
+   ],
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "whats the best way to lite a campfire",
+    "how to strat a fire",
+    "make fier"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "water safe no fuel (128)",
+   "qs": [
+    "we have no fuel to boil water, how else can i make it safe",
+    "can i drink the water without boiling it",
+    "treat water with bleach",
+    "treat water"
+   ],
+   "need": [
+    "PURIFY"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "we have no fuel to boil watter how else can i make it safe",
+    "can i drink the water with out boiling it",
+    "treat watter with bleech"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "cook without power (128)",
+   "qs": [
+    "how do i cook food without electricity or gas"
+   ],
+   "need": [
+    "COOKNOPOWER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "how do i cook food with out electricty or gas"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "out of formula (128)",
+   "qs": [
+    "i ran out of baby formula, what can i feed my baby"
+   ],
+   "need": [
+    "INFANTFEED"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "i ran out of baby formla what can i feed my baby"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "no soap (128)",
+   "qs": [
+    "no soap, how do i wash my hands"
+   ],
+   "need": [
+    "HANDWASH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "no sope how do i wash my hands"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "keep warm no heating (128)",
+   "qs": [
+    "how to keep warm without heating in winter"
+   ],
+   "need": [
+    "WARM",
+    "HEATHOME"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "how to keep warm without heatting in winter"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "bleeding no bandages (128)",
+   "qs": [
+    "i don't have bandages, how do i stop the bleeding"
+   ],
+   "need": [
+    "BLEED",
+    "WOUND"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "i dont have bandages how do i stop the bleding"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "north no compass (128)",
+   "qs": [
+    "i have no compass, how do i find north"
+   ],
+   "need": [
+    "NORTH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "i have no compas how do i find north"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "food no fridge (128)",
+   "qs": [
+    "no refrigerator, how do i keep food safe"
+   ],
+   "need": [
+    "FOODSPOIL"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "no refridgerator how do i keep food safe"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "car battery no cables (128)",
+   "qs": [
+    "my car battery is dead and i have no jumper cables"
+   ],
+   "need": [
+    "CARBATT"
+   ],
+   "context": [],
+   "not_first": [
+    "CPR"
+   ],
+   "typos": [
+    "my car batery is dead and i have no jumper cabels"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "emergency news no phone (128)",
+   "qs": [
+    "no internet or phone, how do i get emergency news"
+   ],
+   "need": [
+    "ALERT"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "no internet or phone how do i get emergancy news"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "no toilet paper (128)",
+   "qs": [
+    "out of toilet paper, what can i use"
+   ],
+   "need": [
+    "TPAPER"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "out of toilet papper what can i use"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "no insulin (128)",
+   "qs": [
+    "we ran out of insulin and the pharmacy is closed"
+   ],
+   "need": [
+    "SUGAR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "we ran out of insulen and the pharmacy is closed"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "flush no water (128)",
+   "qs": [
+    "we have no running water, how do we flush the toilet"
+   ],
+   "need": [
+    "FLUSH"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "we have no runing water how do we flush the toilet"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "building fire next door (128)",
+   "qs": [
+    "there is a building fire next door, what do we do"
+   ],
+   "need": [
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [
+    "FIREMAKE"
+   ],
+   "typos": [
+    "there is a bulding fire next door what do we do"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "kitchen fire (128)",
+   "qs": [
+    "the fire started in the kitchen, how do i put it out"
+   ],
+   "need": [
+    "GREASE",
+    "EXTING"
+   ],
+   "context": [],
+   "not_first": [
+    "FIREMAKE"
+   ],
+   "typos": [
+    "the fire startd in the kitchen how do i put it out"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "put out a fire (128)",
+   "qs": [
+    "how do i put out a fire"
+   ],
+   "need": [
+    "EXTING",
+    "ESCAPE"
+   ],
+   "context": [],
+   "not_first": [
+    "FIREMAKE"
+   ],
+   "typos": [
+    "how do i put out a fier"
+   ]
+  },
+  {
+   "colour": "red",
+   "topic": "no pulse (128)",
+   "qs": [
+    "he has no pulse, what do i do"
+   ],
+   "need": [
+    "CPR"
+   ],
+   "context": [],
+   "not_first": [],
+   "typos": [
+    "he has no puls what do i do"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "generator fire (128 review)",
+   "qs": [
+    "how do i prevent a generator from starting a fire"
+   ],
+   "need": [
+    "GENERATOR"
+   ],
+   "context": [],
+   "not_first": [
+    "FIREMAKE"
+   ],
+   "typos": [
+    "how do i prevent a genrator from starting a fire"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "topic": "water intoxication (128 review)",
+   "qs": [
+    "how do i treat water intoxication"
+   ],
+   "need": [
+    "WATERINTOX"
+   ],
+   "context": [],
+   "not_first": [
+    "PURIFY"
+   ],
+   "typos": [
+    "how do i treat water intoxicaton"
+   ]
+  },
+  {
+   "colour": "green",
+   "topic": "go back inside (128 test)",
+   "qs": [
+    "how do i make it safe to go back inside"
+   ],
+   "need": [
+    "REENTRY"
+   ],
+   "context": [],
+   "not_first": [
+    "PURIFY"
+   ],
+   "typos": [
+    "how do i make it safe to go back insde"
+   ]
+  }
+ ]
+}

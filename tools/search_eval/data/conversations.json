@@ -1,0 +1,968 @@
+{
+ "note": "Multi-message conversations. Each turn is [message, kind]: first, follow (same need), add (adds a need or danger sign), correct (replaces the earlier ask), noise (unrelated or garbled), new (a different emergency). need and context are for the LAST message.",
+ "conversations": [
+  {
+   "colour": "green",
+   "turns": [
+    [
+     "how do i purify water from a creek",
+     "first"
+    ],
+    [
+     "and if i have no bleach?",
+     "follow"
+    ]
+   ],
+   "need": [
+    "PURIFY"
+   ],
+   "context": []
+  },
+  {
+   "colour": "green",
+   "turns": [
+    [
+     "how to use a fire extinguisher",
+     "first"
+    ],
+    [
+     "which type for the kitchen",
+     "follow"
+    ]
+   ],
+   "need": [
+    "EXTING"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "snake bite while camping",
+     "first"
+    ],
+    [
+     "what should i not do",
+     "follow"
+    ]
+   ],
+   "need": [
+    "SNAKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "yellow",
+   "turns": [
+    [
+     "my baby has a fever",
+     "first"
+    ],
+    [
+     "how much paracetamol can she have",
+     "follow"
+    ]
+   ],
+   "need": [
+    "FEVER"
+   ],
+   "context": []
+  },
+  {
+   "colour": "green",
+   "turns": [
+    [
+     "how do i light a campfire",
+     "first"
+    ],
+    [
+     "what if the wood is wet",
+     "follow"
+    ]
+   ],
+   "need": [
+    "FIREMAKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "yellow",
+   "turns": [
+    [
+     "i think my arm is broken",
+     "first"
+    ],
+    [
+     "how do i make a splint",
+     "follow"
+    ]
+   ],
+   "need": [
+    "SPLINT",
+    "FRACTURE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "heat stroke what to do",
+     "first"
+    ],
+    [
+     "how do i cool him down fast",
+     "follow"
+    ]
+   ],
+   "need": [
+    "HEATSTROKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "i smell gas in the house",
+     "first"
+    ],
+    [
+     "should i open the windows",
+     "follow"
+    ]
+   ],
+   "need": [
+    "GASLEAK"
+   ],
+   "context": []
+  },
+  {
+   "colour": "green",
+   "turns": [
+    [
+     "how to store water for an emergency",
+     "first"
+    ],
+    [
+     "how long does it keep",
+     "follow"
+    ]
+   ],
+   "need": [
+    "STOREWATER"
+   ],
+   "context": []
+  },
+  {
+   "colour": "yellow",
+   "turns": [
+    [
+     "a dog bit my hand",
+     "first"
+    ],
+    [
+     "do i need a rabies shot",
+     "follow"
+    ]
+   ],
+   "need": [
+    "BITE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "yellow",
+   "turns": [
+    [
+     "my child has diarrhea",
+     "first"
+    ],
+    [
+     "how do i make the salt and sugar drink",
+     "follow"
+    ]
+   ],
+   "need": [
+    "DIARR",
+    "DEHYD"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "earthquake happening what do i do",
+     "first"
+    ],
+    [
+     "and after the shaking stops?",
+     "follow"
+    ]
+   ],
+   "need": [
+    "QUAKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "cut my hand badly with a knife",
+     "first"
+    ],
+    [
+     "now he is pale and dizzy",
+     "add"
+    ]
+   ],
+   "need": [
+    "SHOCK",
+    "BLEED"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "i burned my hand on the stove",
+     "first"
+    ],
+    [
+     "and now he can't breathe from the smoke",
+     "add"
+    ]
+   ],
+   "need": [
+    "SMOKEINH",
+    "BURN"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "he fell off the roof",
+     "first"
+    ],
+    [
+     "and his leg is bent the wrong way",
+     "add"
+    ]
+   ],
+   "need": [
+    "FRACTURE",
+    "SPINE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "stung by a bee",
+     "first"
+    ],
+    [
+     "now her throat is swelling",
+     "add"
+    ]
+   ],
+   "need": [
+    "ANAPH"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my kid hit his head",
+     "first"
+    ],
+    [
+     "now he keeps vomiting",
+     "add"
+    ]
+   ],
+   "need": [
+    "HEAD"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "hypothermia after falling in cold water",
+     "first"
+    ],
+    [
+     "he also has white numb fingers",
+     "add"
+    ]
+   ],
+   "need": [
+    "HYPOTHERM",
+    "FROSTBITE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "diarrhea for two days",
+     "first"
+    ],
+    [
+     "now she's very sleepy and won't drink",
+     "add"
+    ]
+   ],
+   "need": [
+    "DEHYD"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "the oil in the pan caught fire",
+     "first"
+    ],
+    [
+     "and my husband burned his arm",
+     "add"
+    ]
+   ],
+   "need": [
+    "BURN",
+    "GREASE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "flood water in the house",
+     "first"
+    ],
+    [
+     "and there are electric wires in the water",
+     "add"
+    ]
+   ],
+   "need": [
+    "ELEC"
+   ],
+   "context": [
+    "C_FLOOD"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "a snake bit my leg",
+     "first"
+    ],
+    [
+     "now the leg is swelling a lot",
+     "add"
+    ]
+   ],
+   "need": [
+    "SNAKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "burned my hand lighting the fire",
+     "first"
+    ],
+    [
+     "no no i mean the smoke, he can't breathe",
+     "correct"
+    ]
+   ],
+   "need": [
+    "SMOKEINH"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my son is choking",
+     "first"
+    ],
+    [
+     "no i mean he swallowed bleach",
+     "correct"
+    ]
+   ],
+   "need": [
+    "CAUSTIC"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how do i treat a burn",
+     "first"
+    ],
+    [
+     "not me, the baby, boiling water spilled on her",
+     "correct"
+    ]
+   ],
+   "need": [
+    "BURN"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my dad is dizzy",
+     "first"
+    ],
+    [
+     "no i mean he's having chest pain down his arm",
+     "correct"
+    ]
+   ],
+   "need": [
+    "HEART"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how to start a fire",
+     "first"
+    ],
+    [
+     "no, how to put out a grease fire in the pan",
+     "correct"
+    ]
+   ],
+   "need": [
+    "GREASE"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "she fell in the pool",
+     "first"
+    ],
+    [
+     "no she's out of the water but not breathing",
+     "correct"
+    ]
+   ],
+   "need": [
+    "CPR",
+    "DROWN"
+   ],
+   "context": [
+    "C_POOL"
+   ]
+  },
+  {
+   "colour": "yellow",
+   "turns": [
+    [
+     "how do i purify water",
+     "first"
+    ],
+    [
+     "no i mean he drank dirty water and has diarrhea",
+     "correct"
+    ]
+   ],
+   "need": [
+    "DIARR"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "a power line is down on the street",
+     "first"
+    ],
+    [
+     "no i mean he touched it and collapsed",
+     "correct"
+    ]
+   ],
+   "need": [
+    "ELEC",
+    "CPR"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my baby has a rash",
+     "first"
+    ],
+    [
+     "no the rash doesn't fade when pressed and she has a fever",
+     "correct"
+    ]
+   ],
+   "need": [
+    "MENING",
+    "FEVER"
+   ],
+   "context": []
+  },
+  {
+   "colour": "yellow",
+   "turns": [
+    [
+     "spider bite on my foot",
+     "first"
+    ],
+    [
+     "no it was a scorpion",
+     "correct"
+    ]
+   ],
+   "need": [
+    "SCORPION"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "where to put a carbon monoxide detector",
+     "first"
+    ],
+    [
+     "NO I MEAN WE ALL HAVE HEADACHES AND THE GENERATOR IS INSIDE",
+     "correct"
+    ]
+   ],
+   "need": [
+    "CO"
+   ],
+   "context": [
+    "C_GENERATOR"
+   ]
+  },
+  {
+   "colour": "green",
+   "turns": [
+    [
+     "how do i use a compass",
+     "first"
+    ],
+    [
+     "no i mean we're lost, how do we signal for help",
+     "correct"
+    ]
+   ],
+   "need": [
+    "SIGNAL"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "he is shaking",
+     "first"
+    ],
+    [
+     "no i mean a seizure, foaming at the mouth",
+     "correct"
+    ]
+   ],
+   "need": [
+    "SEIZURE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "burned my hand lighting a fire",
+     "first"
+    ],
+    [
+     "jdjdjdk",
+     "noise"
+    ],
+    [
+     "no no the smoke he cant breathe",
+     "correct"
+    ]
+   ],
+   "need": [
+    "SMOKEINH"
+   ],
+   "context": [
+    "C_FIREMAKE"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my son is choking",
+     "first"
+    ],
+    [
+     "sorry wrong chat",
+     "noise"
+    ],
+    [
+     "he's turning blue",
+     "add"
+    ]
+   ],
+   "need": [
+    "CHOKE",
+    "CPR"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "snake bite while camping",
+     "first"
+    ],
+    [
+     "asdfgh",
+     "noise"
+    ],
+    [
+     "what do i not do",
+     "follow"
+    ]
+   ],
+   "need": [
+    "SNAKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my baby has a fever",
+     "first"
+    ],
+    [
+     "😭😭😭",
+     "noise"
+    ],
+    [
+     "now she is shaking all over",
+     "add"
+    ]
+   ],
+   "need": [
+    "SEIZURE",
+    "FEVER"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my house is on fire",
+     "first"
+    ],
+    [
+     "wait",
+     "noise"
+    ],
+    [
+     "the kids are upstairs",
+     "add"
+    ]
+   ],
+   "need": [
+    "ESCAPE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "cut my hand",
+     "first"
+    ],
+    [
+     "hhhhhhh",
+     "noise"
+    ],
+    [
+     "it wont stop bleeding",
+     "add"
+    ]
+   ],
+   "need": [
+    "BLEED"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "i smell gas",
+     "first"
+    ],
+    [
+     "ok",
+     "noise"
+    ],
+    [
+     "should i turn off the stove",
+     "follow"
+    ]
+   ],
+   "need": [
+    "GASLEAK"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "he fell through the ice",
+     "first"
+    ],
+    [
+     "lol sorry",
+     "noise"
+    ],
+    [
+     "he's shivering and confused",
+     "add"
+    ]
+   ],
+   "need": [
+    "HYPOTHERM"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "my toddler drank something",
+     "first"
+    ],
+    [
+     "the duck is a mint",
+     "noise"
+    ],
+    [
+     "it was bleach",
+     "add"
+    ]
+   ],
+   "need": [
+    "CAUSTIC"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "chest pain",
+     "first"
+    ],
+    [
+     "jfjfjfjf",
+     "noise"
+    ],
+    [
+     "it goes to his left arm",
+     "add"
+    ]
+   ],
+   "need": [
+    "HEART"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "stung by a bee",
+     "first"
+    ],
+    [
+     "ignore that",
+     "noise"
+    ],
+    [
+     "her lips are swelling",
+     "add"
+    ]
+   ],
+   "need": [
+    "ANAPH"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "flooding in the street",
+     "first"
+    ],
+    [
+     "kkkkk",
+     "noise"
+    ],
+    [
+     "our car is stuck in the water",
+     "add"
+    ]
+   ],
+   "need": [
+    "FLOODCAR"
+   ],
+   "context": [
+    "C_FLOOD"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how do i purify water",
+     "first"
+    ],
+    [
+     "THE KITCHEN IS ON FIRE",
+     "new"
+    ]
+   ],
+   "need": [
+    "GREASE",
+    "ESCAPE"
+   ],
+   "context": [
+    "C_WATERTREAT"
+   ]
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how to store food",
+     "first"
+    ],
+    [
+     "my kid is not breathing",
+     "new"
+    ]
+   ],
+   "need": [
+    "CPR"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how do i use a compass",
+     "first"
+    ],
+    [
+     "a snake just bit my leg",
+     "new"
+    ]
+   ],
+   "need": [
+    "SNAKE"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how to grow tomatoes",
+     "first"
+    ],
+    [
+     "i smell gas in the kitchen",
+     "new"
+    ]
+   ],
+   "need": [
+    "GASLEAK"
+   ],
+   "context": []
+  },
+  {
+   "colour": "red",
+   "turns": [
+    [
+     "how to build a shelter",
+     "first"
+    ],
+    [
+     "my friend fell and is bleeding a lot",
+     "new"
+    ]
+   ],
+   "need": [
+    "BLEED"
+   ],
+   "context": []
+  }
+ ]
+}

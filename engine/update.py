@@ -1,14 +1,19 @@
-"""Check for updates, in the desktop app: only when the person asks (About's button, or Lastbook > Check for Updates… on a Mac).
-Nothing here runs at startup or on a timer, and nothing is downloaded, installed or started: the check only says whether a newer
-version is on the website.
+"""Check for updates, in the desktop app: when the person asks (About's button, or Lastbook > Check for Updates… on a Mac), and,
+only for someone who turned on "Notify me about app updates", at most once a day while the app's window is open (Notices below).
+The check only says whether a newer version is on the website. Then About offers one of:
+  - Update now, only on a Mac build with a trusted Sparkle setup (app/update_macos.py, NATIVE here): pressing it starts Sparkle,
+    which asks the person, verifies the signed archive, replaces Lastbook.app and relaunches. This module never downloads or runs it.
+  - Open download page everywhere else (Windows, Linux, Mac builds without that setup, or when Sparkle fails): the official
+    installer page in the system browser.
 
   - One small GET of METADATA through engine/setup/download.py, the one way out (HTTPS, no proxy). Only https://downloads.lastbook.org
     on port 443 is accepted, also after a redirect: not the bucket's r2.dev address, not Hugging Face.
   - METADATA (app-v1.json at the bucket root) is display information only: {"version": 1, "mac": {"version", "min_os"}, "windows": {...}}.
     Other fields (url, size, sha256, notes) may be there for later; they are not read.
-  - Later, with Developer ID and Authenticode signing: signed metadata (an Ed25519 key in the app) and an in-app install. Not before.
 
-Routes, under /api/update/: GET state; POST check.
+Routes, under /api/update/: GET state; POST check; GET notice; POST auto; POST open; POST now (Update now: NATIVE only). Notices and the browser handoff require the
+desktop app to call configure(). The setting itself is changed through
+/api/setup/updates (Setup and Settings), which calls Notices.set_notify.
 """
 import json
 import os
@@ -17,8 +22,10 @@ import plistlib
 import re
 import sys
 import threading
+import time
 import traceback
 import urllib.parse
+import webbrowser
 from pathlib import Path
 
 from engine.setup import download
@@ -28,6 +35,7 @@ HOST = 'downloads.lastbook.org'
 VER = re.compile(r'^\d{1,6}(\.\d{1,6}){0,3}$')    # Windows builds have 5 digits (10.0.26200)
 MAX_BODY = 4096
 WEBSITE = 'lastbook.org'
+DOWNLOAD_URL = f'https://{WEBSITE}/download/'
 
 OFFLINE = 'Lastbook could not reach the internet. Everything else in Lastbook still works without it; try again when you are online.'
 
@@ -144,10 +152,12 @@ class Updater:
         self.lock = threading.Lock()
         self.s = {'state': 'idle'}
         self.thread = None
+        self.automatic = False
+        self.on_done = None          # Notices._record, in the desktop app: called with (state, token) once a check has ended
 
-    def state(self):
+    def state(self, *, manual=False):
         with self.lock:
-            out = dict(self.s)
+            out = {'state': 'idle'} if manual and self.automatic else dict(self.s)
         out['current'] = self.version
         out['website'] = WEBSITE
         return out
@@ -156,22 +166,32 @@ class Updater:
         with self.lock:
             self.s = kw
 
-    def check(self):
+    def check(self, token=None, *, automatic=False):
+        """token: handed back to on_done with the result (Notices drops a result whose token is from before an opt-out)."""
         if not self.key:
             return {'error': 'Updates are for the Mac, Windows and Linux app.', 'code': 'unsupported'}
-        if self.thread is not None and self.thread.is_alive():
-            return self.state()
-        self._set(state='checking')
-        self.thread = threading.Thread(target=self._guard, daemon=True, name='update-check')
-        self.thread.start()
+        with self.lock:
+            if self.thread is None or not self.thread.is_alive():
+                self.s = {'state': 'checking'}
+                self.automatic = automatic
+                self.thread = threading.Thread(target=self._guard, args=(token,), daemon=True, name='update-check')
+                self.thread.start()
+            elif not automatic:
+                self.automatic = False    # an explicit check shares the in-flight result and shows its status in About
         return self.state()
 
-    def _guard(self):
+    def _guard(self, token=None):
         try:
             self._check()
         except Exception as e:
             traceback.print_exc()
             self._set(state='error', code='internal', message=f'The check stopped on an internal error ({type(e).__name__}).')
+        done = self.on_done
+        if done:
+            try:
+                done(self.state(), token)
+            except Exception:
+                traceback.print_exc()
 
     def _fetch(self):
         """(status, bytes) of the metadata through download.py. Raises download.Failed with code 'offline' when nothing answers."""
@@ -224,7 +244,173 @@ class Updater:
         self._set(state='available', version=offer['version'])
 
 
+PREFS = 'updates.json'       # in the app's own settings folder (app/main.py app_folders()[0]), beside setup.json
+DAY = 24 * 60 * 60           # at most one automatic attempt in this interval, even if the site cannot be reached
+CLOCK_SLACK = 5 * 60         # a time saved further ahead than this means the clock went back: it is not trusted
+OFF = {'notify': False, 'available': None, 'checking': False}
+
+
+class Notices:
+    """Opt-in update notices: the desktop app only (configure()). Off unless the person turned them on, whatever the file says
+    otherwise: missing, unreadable, from an older version, or anything but notify: true.
+
+    updates.json: {"notify": bool, "tried": t, "checked": t, "generation": n, "found": {"version", "key"}}. Only Setup's and Settings' checkbox
+    write notify; tried/checked/found are written only while notify is true. Turning it off drops found at once and keeps the two
+    times, so off and on again does not buy an extra check that day.
+      - auto() is the window's nudge (web/update.js: soon after it opens, hourly, and when the system says it is online again). It
+        starts a check only if notify is on, this is a built app with a version, and no check was attempted in the last DAY.
+        tried is saved before the check starts, so reloads, a second window or a restart cannot start another. If the attempt
+        cannot be saved, no check starts.
+      - A check that ends (an automatic one or the person's own, while notify is on) is recorded by _record: offline counts as a try
+        only; any answer from the site, or another failure, as the day's check. available keeps the version for this platform;
+        up to date, too old a system, or nothing published clears it.
+      - set_notify(False) takes effect at once: no new check starts, the notice goes, and a check already under way (its request
+        cannot be withdrawn) is not recorded when it ends, because its token is from before.
+    The notice is shown only while notify is on and the found version is newer than this app, so updating the app hides it."""
+
+    def __init__(self, settings_dir, u, now=time.time):
+        self.path = Path(settings_dir) / PREFS
+        self.u, self.now = u, now
+        self.lock = threading.Lock()
+        u.on_done = self._record
+
+    # -------------------------------------------------------------------------------------------------------- the file --
+    def _read(self):
+        try:
+            d = json.loads(self.path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            d = None
+        if not isinstance(d, dict) or type(d.get('notify')) is not bool:
+            return {'notify': False}
+        p = {'notify': d.get('notify') is True}
+        generation = d.get('generation')
+        if type(generation) is int and generation >= 0:
+            p['generation'] = generation
+        for k in ('tried', 'checked'):
+            v = d.get(k)
+            if type(v) in (int, float) and 0 <= v <= 2**53:
+                p[k] = float(v)
+        f = d.get('found')
+        if isinstance(f, dict) and _ver(f.get('version')) and isinstance(f.get('key'), str) and f['key'] in OS_NAMES:
+            p['found'] = {'version': f['version'], 'key': f['key']}
+        return p
+
+    @property
+    def gen(self):
+        return self._read().get('generation', 0)
+
+    def _lock_settings(self):
+        """Hold the same lock for every change, even when two app processes share a settings directory."""
+        from engine.paths import try_lock
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            lock = self.path.with_suffix('.lock').open('a+b')
+        except OSError:
+            return None
+        for _ in range(8):
+            try:
+                try_lock(lock)
+                return lock
+            except OSError:
+                time.sleep(.01)
+        lock.close()
+        return None
+
+    def _save(self, p):
+        try:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_name(self.path.name + '.tmp')
+            tmp.write_text(json.dumps(p), encoding='utf-8')
+            os.replace(tmp, self.path)
+            return True
+        except OSError as e:
+            print('update: could not save', PREFS + ':', e, flush=True)
+            return False
+
+    # ------------------------------------------------------------------------------------------------------- the rules --
+    def _busy(self):
+        t = self.u.thread
+        return t is not None and t.is_alive()
+
+    def _eligible(self, p):
+        """The version to show in the sidebar, or None."""
+        f, mine = p.get('found'), _ver(self.u.version or '')
+        if not p['notify'] or not f or not mine or f['key'] != self.u.key:
+            return None
+        return f['version'] if _ver(f['version']) > mine else None
+
+    def _due(self, p, now):
+        def since(k):
+            t = p.get(k)
+            return None if t is None or t > now + CLOCK_SLACK else now - t
+        checked, tried = since('checked'), since('tried')
+        return (checked is None or checked >= DAY) and (tried is None or tried >= DAY)
+
+    def _public(self, p):
+        return {'notify': p['notify'], 'available': self._eligible(p), 'checking': self._busy()}
+
+    # ------------------------------------------------------------------------------------------------------ the routes --
+    def notice(self):
+        with self.lock:
+            return self._public(self._read())
+
+    def auto(self):
+        with self.lock:
+            p = self._read()
+            now = self.now()
+            if not p['notify'] or not self.u.key or not _ver(self.u.version or '') or self._busy() or not self._due(p, now):
+                return self._public(p)
+            lock = self._lock_settings()
+            if lock is None:
+                return self._public(self._read())
+            with lock:
+                p = self._read()
+                if p['notify'] and self._due(p, now):
+                    p['tried'] = now
+                    if self._save(p):
+                        self.u.check(p.get('generation', 0), automatic=True)
+                return self._public(p)
+
+    def set_notify(self, on):
+        with self.lock:
+            lock = self._lock_settings()
+            if lock is None:
+                return {'error': 'Lastbook could not save this setting. Try again.', 'code': 'save'}
+            with lock:
+                p = self._read()
+                p['notify'] = on is True
+                if not p['notify']:
+                    p['generation'] = p.get('generation', 0) + 1  # older checks cannot record a notice
+                    p.pop('found', None)
+                if self._save(p):
+                    return self._public(p)
+                return {'error': 'Lastbook could not save this setting. Try again.', 'code': 'save'}
+
+    def _record(self, s, token):
+        with self.lock:
+            if not self._read()['notify']:
+                return
+            lock = self._lock_settings()
+            if lock is None:
+                return
+            with lock:
+                p = self._read()
+                if not p['notify'] or token != p.get('generation', 0):
+                    return
+                now = self.now()
+                p['tried'] = now
+                if s.get('state') != 'error' or s.get('code') != 'offline':
+                    p['checked'] = now
+                if s.get('state') == 'available' and _ver(s.get('version')) and self.u.key in OS_NAMES:
+                    p['found'] = {'version': s['version'], 'key': self.u.key}
+                elif s.get('state') in ('up_to_date', 'too_old_os', 'not_published'):
+                    p.pop('found', None)
+                self._save(p)
+
+
 UPDATER = None
+NOTICES = None
+NATIVE = None        # app/update_macos.Native on a Mac: ready(), status(), begin(). None elsewhere: no Update now.
 
 
 def updater():
@@ -234,9 +420,60 @@ def updater():
     return UPDATER
 
 
+def configure(settings_dir):
+    """app/main.py, the desktop app only: notices, with their setting in the app's own settings folder. Reaches no network."""
+    global NOTICES
+    NOTICES = Notices(settings_dir, updater())
+    return NOTICES
+
+
+def _with_notice(s):
+    s['notice'] = NOTICES.notice()['available'] if NOTICES else None
+    s['download_url'] = DOWNLOAD_URL
+    s['can_open_download'] = NOTICES is not None and bool(_ver(s['current']))
+    native = NATIVE.status() if NATIVE is not None and s['can_open_download'] else {'ready': False, 'error': None}
+    s['can_update_now'] = native['ready']
+    s['update_now_error'] = native['error']
+    return s
+
+
+def _has_offer(u):
+    return u.state(manual=True)['state'] == 'available' or bool(NOTICES.notice()['available'])
+
+
+def _update_now(u):
+    """Update now: starts the native updater, which asks the person before anything is installed. Takes nothing from the request."""
+    if NATIVE is None or NOTICES is None or not _ver(u.version) or not NATIVE.ready():
+        return {'error': 'This copy of Lastbook cannot update itself. Use the download page instead.', 'fallback': True}
+    if not _has_offer(u):
+        return {'error': 'Check for an update again first.'}
+    out = NATIVE.begin()
+    if 'error' in out:
+        out['fallback'] = True
+    return out
+
+
+def _open_download(u):
+    """The desktop app's only browser handoff. The destination comes from this code, never the feed or the request."""
+    if NOTICES is None or not _ver(u.version):
+        return {'error': 'Open lastbook.org/download/ in your browser for the installer.'}
+    if not _has_offer(u):
+        return {'error': 'Check for an update again before opening the installer page.'}
+    try:
+        if webbrowser.open_new_tab(DOWNLOAD_URL):
+            return {'opened': True}
+    except (OSError, webbrowser.Error):
+        pass
+    return {'error': 'Lastbook could not open your browser. Copy the download link and open it there.'}
+
+
 ROUTES = {
-    ('GET', 'state'): lambda u: u.state(),
-    ('POST', 'check'): lambda u: u.check(),
+    ('GET', 'state'): lambda u: _with_notice(u.state(manual=True)),
+    ('POST', 'check'): lambda u: _with_notice(u.check(NOTICES.gen if NOTICES else None)),
+    ('GET', 'notice'): lambda u: NOTICES.notice() if NOTICES else dict(OFF),
+    ('POST', 'auto'): lambda u: NOTICES.auto() if NOTICES else dict(OFF),
+    ('POST', 'open'): _open_download,
+    ('POST', 'now'): _update_now,
 }
 
 

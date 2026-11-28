@@ -6,6 +6,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -293,6 +294,61 @@ def cluster_size(path):
         return st.f_frsize or st.f_bsize or None
     except (OSError, AttributeError, ValueError):
         return None
+
+
+# macOS marks a file or folder whose contents are only in iCloud (Optimize Mac Storage) with this flag. Python names it
+# stat.SF_DATALESS from 3.13 on; the value is the same before that.
+DATALESS = 0x40000000
+CLOUD_EXAMPLES = 5
+
+
+def cloud_only(folder, examples=CLOUD_EXAMPLES):
+    """What under folder is only in iCloud, so it will not open without internet: {'files', 'folders', 'bytes', 'examples'}
+    (examples: relative paths, a folder with a trailing /). None where this cannot tell (not a Mac).
+
+    Metadata only: lstat never downloads, and no file is opened. A folder in the cloud is counted, not listed, because listing
+    it asks iCloud for its contents. Links are not followed."""
+    if sys.platform != 'darwin':
+        return None
+    folder = Path(folder)
+    out = {'files': 0, 'folders': 0, 'bytes': 0, 'examples': []}
+
+    def note(rel, kind, size=0):
+        out[kind] += 1
+        out['bytes'] += size
+        if len(out['examples']) < examples:
+            out['examples'].append(rel)
+
+    try:
+        if os.lstat(folder).st_flags & DATALESS:   # the library folder itself: not listed either
+            return {'files': 0, 'folders': 1, 'bytes': 0, 'examples': ['./']}
+    except OSError:
+        return None
+    stack = [folder]
+    while stack:
+        d = stack.pop()
+        try:
+            names = sorted(os.listdir(d), reverse=True)
+        except OSError:
+            continue
+        for name in names:
+            p = d / name
+            try:
+                st = os.lstat(p)
+            except OSError:
+                continue
+            rel = p.relative_to(folder).as_posix()
+            if stat.S_ISLNK(st.st_mode):
+                continue
+            if stat.S_ISDIR(st.st_mode):
+                if st.st_flags & DATALESS:
+                    note(rel + '/', 'folders')
+                else:
+                    stack.append(p)
+            elif st.st_flags & DATALESS:
+                note(rel, 'files', st.st_size)
+    out['examples'].sort()
+    return out
 
 
 def candidate_disks(extra=()):

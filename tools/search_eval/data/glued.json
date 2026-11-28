@@ -1,0 +1,456 @@
+{
+ "note": "Glued words, keyboard mash, autocorrect slips, unknown and long real words. split = what a glued message should be searched as (null: nothing to split); red = an emergency; need = keys the first hit should match (empty: no right page); unsure = the chat should ask for more words (true), should not (false), either (null).",
+ "cases": [
+  {
+   "q": "heschuokinghelkp",
+   "kind": "glued_red",
+   "split": "he's choking help",
+   "red": true,
+   "need": [
+    "CHOKE"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "hesnotbreathing",
+   "kind": "glued_red",
+   "split": "he's not breathing",
+   "red": true,
+   "need": [
+    "CPR"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "mybabyisblue",
+   "kind": "glued_red",
+   "split": "my baby is blue",
+   "red": true,
+   "need": [
+    "CPR",
+    "CHOKE",
+    "NEWBORN"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "kitchenonfire",
+   "kind": "glued_red",
+   "split": "kitchen on fire",
+   "red": true,
+   "need": [
+    "GREASE",
+    "EXTING",
+    "ESCAPE"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "cantstopbleeding",
+   "kind": "glued_red",
+   "split": "can't stop bleeding",
+   "red": true,
+   "need": [
+    "BLEED"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "sheschoking",
+   "kind": "glued_red",
+   "split": "she's choking",
+   "red": true,
+   "need": [
+    "CHOKE"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "babynotbreathing",
+   "kind": "glued_red",
+   "split": "baby not breathing",
+   "red": true,
+   "need": [
+    "CPR"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "mysonatebleach",
+   "kind": "glued_red",
+   "split": "my son ate bleach",
+   "red": true,
+   "need": [
+    "CAUSTIC",
+    "POISON"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "snakebitmyleg",
+   "kind": "glued_red",
+   "split": "snake bit my leg",
+   "red": true,
+   "need": [
+    "SNAKE"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "ismellgasinthehouse",
+   "kind": "glued_red",
+   "split": "i smell gas in the house",
+   "red": true,
+   "need": [
+    "GASLEAK"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "hecollapsedandwontwakeup",
+   "kind": "glued_red",
+   "split": "he collapsed and won't wake up",
+   "red": true,
+   "need": [
+    "CPR",
+    "RECOVERY"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "myhusbandishavingaseizure",
+   "kind": "glued_red",
+   "split": "my husband is having a seizure",
+   "red": true,
+   "need": [
+    "SEIZURE"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "chestpainandsweating",
+   "kind": "glued_red",
+   "split": "chest pain and sweating",
+   "red": true,
+   "need": [
+    "HEART"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "hesbleedingalot",
+   "kind": "glued_red",
+   "split": "he's bleeding a lot",
+   "red": true,
+   "need": [
+    "BLEED"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "mybbyisntbreathing",
+   "kind": "glued_red",
+   "split": "my baby isn't breathing",
+   "red": true,
+   "need": [
+    "CPR"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "hescolapsednotbreathin",
+   "kind": "glued_red",
+   "split": "he's collapsed not breathing",
+   "red": true,
+   "need": [
+    "CPR"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "housefireeveryoneout",
+   "kind": "glued_red",
+   "split": "house fire everyone out",
+   "red": true,
+   "need": [
+    "ESCAPE",
+    "EXTING"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "sheburnedherhand",
+   "kind": "glued_red",
+   "split": "she burned her hand",
+   "red": true,
+   "need": [
+    "BURN"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "howtopurifywater",
+   "kind": "glued_everyday",
+   "split": "how to purify water",
+   "red": false,
+   "need": [
+    "PURIFY",
+    "BOIL"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "howdoistorerice",
+   "kind": "glued_everyday",
+   "split": "how do i store rice",
+   "red": false,
+   "need": [],
+   "unsure": false
+  },
+  {
+   "q": "howtotieabowline",
+   "kind": "glued_everyday",
+   "split": "how to tie a bowline",
+   "red": false,
+   "need": [
+    "KNOT"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "buildarootcellar",
+   "kind": "glued_everyday",
+   "split": "build a root cellar",
+   "red": false,
+   "need": [
+    "ROOTCELLAR"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "howtosplitfirewood",
+   "kind": "glued_everyday",
+   "split": "how to split firewood",
+   "red": false,
+   "need": [
+    "FIREWOOD",
+    "WOODCUT"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "howtomakesoap",
+   "kind": "glued_everyday",
+   "split": "how to make soap",
+   "red": false,
+   "need": [],
+   "unsure": false
+  },
+  {
+   "q": "asdfghjkl",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "jdjdk",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "qwertyuiop",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "sdfsdfsdf",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "hjkhjkhjk",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "zxcvbnm",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "fjfjfj dkdkdk",
+   "kind": "mash",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "hes chalking help",
+   "kind": "autocorrect",
+   "split": null,
+   "red": null,
+   "need": [
+    "CHOKE"
+   ],
+   "unsure": null
+  },
+  {
+   "q": "my bay is blew",
+   "kind": "autocorrect",
+   "split": null,
+   "red": null,
+   "need": [],
+   "unsure": null
+  },
+  {
+   "q": "the duck is a mint",
+   "kind": "autocorrect",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": null
+  },
+  {
+   "q": "blorft",
+   "kind": "unknown_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "fghfgh",
+   "kind": "unknown_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "xqzvw",
+   "kind": "unknown_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": true
+  },
+  {
+   "q": "hypothermia",
+   "kind": "long_word",
+   "split": null,
+   "red": true,
+   "need": [
+    "HYPOTHERM"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "electrocution",
+   "kind": "long_word",
+   "split": null,
+   "red": true,
+   "need": [
+    "ELEC"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "firecraft",
+   "kind": "long_word",
+   "split": null,
+   "red": false,
+   "need": [
+    "FIREMAKE"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "Gutenberg",
+   "kind": "long_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": false
+  },
+  {
+   "q": "anaphylaxis",
+   "kind": "long_word",
+   "split": null,
+   "red": true,
+   "need": [
+    "ANAPH"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "breastfeeding",
+   "kind": "long_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": false
+  },
+  {
+   "q": "overwintering",
+   "kind": "long_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": false
+  },
+  {
+   "q": "photosynthesis",
+   "kind": "long_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": false
+  },
+  {
+   "q": "how do i treat hypothermia in a child",
+   "kind": "long_word",
+   "split": null,
+   "red": true,
+   "need": [
+    "HYPOTHERM"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "what is electrocution",
+   "kind": "long_word",
+   "split": null,
+   "red": true,
+   "need": [
+    "ELEC"
+   ],
+   "unsure": false
+  },
+  {
+   "q": "Schwarzenegger",
+   "kind": "long_word",
+   "split": null,
+   "red": false,
+   "need": [],
+   "unsure": null
+  }
+ ]
+}

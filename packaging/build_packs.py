@@ -1,7 +1,7 @@
 """Builds Lastbook's download packs from derived/packs/pack-spec.json. A pack is a data folder: point LASTBOOK_DATA at it.
 
   python -I -B build_packs.py snapshot
-  python -I -B build_packs.py map base|us|<state code, such as RI>
+  python -I -B build_packs.py map base|us|<state code, such as RI>|<country code, such as eu-at>
   python -I -B build_packs.py build small|medium|all|corporals-corner|firearms-hunting [--map base|us|RI] [--sample N] [--snapshot DIR] [--fetched DIR]
 
 Everything comes from one frozen snapshot of the catalog and search file, so the indexer can run throughout. The library is only read: files that do not change are APFS
@@ -1261,6 +1261,8 @@ def sources_page(records):
 
 # ---------------------------------------------------------------- maps ----
 GEO_FILES = ['national', 'map', 'water', 'terrain', 'buildings', 'crops', 'places']
+# European countries a detailed map can be built for, as 'eu-<iso>' codes: titles, ISO codes and extract boxes.
+COUNTRIES = json.loads((PROJECT / 'packaging' / 'europe-countries.json').read_text(encoding='utf-8'))['countries']
 
 
 def geo_source():
@@ -1292,6 +1294,18 @@ def state_box(src, code):
     if not row[4]:
         raise SystemExit(f'no ZIP centres for state {code}')
     return row[0] - .15, row[1] - .15, row[2] + .15, row[3] + .15
+
+
+def country_box(code):
+    """A country's box: the bounding box of Geofabrik's OpenStreetMap extract polygon for it (packaging/europe-countries.json),
+    with the same 0.15 degree margin the state boxes get. An envelope, as a state's box is: a country map also holds the
+    rows of whatever else falls inside it, and the layers hold nothing outside the source's own coverage."""
+    w, s, e, n = COUNTRIES[code]['box']
+    return w - .15, s - .15, e + .15, n + .15
+
+
+def region_box(src, code):
+    return country_box(code) if code in COUNTRIES else state_box(src, code)
 
 
 def tile_range(box, z):
@@ -1364,15 +1378,15 @@ def scrub_terrain(db):
     db.execute("UPDATE meta SET value=trim(substr(value,1,instr(value||'(','(')-1)) WHERE key='source'")
 
 
-def state_set(src, dest, code):
-    """Base, then every row inside the state's box."""
+def state_set(src, dest, code, box=None):
+    """Base, then every row inside the region's box (a state's, from its ZIP centres, or a country's)."""
     base = OUT / 'maps' / 'base'
     if not (base / 'map-set.json').exists():
         build_map('base')
     for f in base.rglob('*'):
         if f.is_file() and f.name != 'map-set.json':
             clone(f, dest / f.relative_to(base))
-    box = state_box(src, code)
+    box = box or state_box(src, code)
     w, s, e, n = box
     inbox = 'maxx>=? AND minx<=? AND maxy>=? AND miny<=?'
     args = (w, e, s, n)
@@ -1470,6 +1484,8 @@ def build_map(name):
         us_set(src, dest)
     elif re.fullmatch(r'[A-Z]{2}', name):
         state_set(src, dest, name)
+    elif name in COUNTRIES:
+        state_set(src, dest, name, country_box(name))
     else:
         raise SystemExit(f'unknown map set {name}')
     size = {f.relative_to(dest).as_posix(): f.stat().st_size for f in dest.rglob('*') if f.is_file()}
