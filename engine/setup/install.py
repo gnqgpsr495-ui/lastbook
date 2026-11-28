@@ -754,8 +754,9 @@ def _restore_library(pend, d, target, note):
             note['keep_work'] = True
             note['error'] += f' Some files could not be moved back from {source} ({type(e).__name__}).'
     if conflicts:
-        note['keep_work'] = True
-        note['error'] += f' Files with the same name are still in {staged}.'
+        # The library already has a file of that name: both are kept. The staged copy stays in the unpack, which
+        # api._keep_unpacked sets aside as kept-<time> (and names in this message), so the next start does not ask again.
+        note['error'] += f' Files with the same name as files in the library were not moved back and are in {staged}.'
     if note.get('keep_work'):
         print('setup:', note['error'], flush=True)
 

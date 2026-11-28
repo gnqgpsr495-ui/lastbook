@@ -2247,6 +2247,40 @@ class Switching(Base):
         self.assertEqual((cur / model).read_bytes(), b'model')
         self.recovered(work)
 
+    def test_incomplete_rollback_is_kept_when_another_library_is_chosen(self):
+        """#354 review: after a switch retried at a restart, a rollback that could not move the address index back keeps it in
+        the stage. Choosing another existing library must not drop the pending file and the stage before the next start."""
+        index = 'derived/geo/addresses/CA.sqlite'
+        cur, work, staged = self.interrupted_switch({index: b'address index'})
+        pend = api._pending_file(self.settings)
+        d = json.loads(pend.read_text())
+        d['attempts'] = 1
+        pend.write_text(json.dumps(d))
+        real = os.replace
+
+        def locked_index(src, dst):
+            if Path(src) == staged / index:
+                raise PermissionError('address index in use')
+            return real(src, dst)
+
+        with mock.patch.object(install.os, 'replace', locked_index):
+            lib, note = api.startup(self.settings)
+            api.opened(self.settings, lib, note)
+        kept = pend.read_bytes()
+
+        other = self.lib(self.parent / 'Other' / 'LastbookData', 'other')
+        s = self.setup('manage', current=cur)
+        r = s.use(str(other))
+        self.assertEqual(r.get('code'), 'busy', r)
+        self.assertIn('Restart Lastbook', r['error'])
+        self.assertEqual((staged / index).read_bytes(), b'address index')
+        self.assertEqual(pend.read_bytes(), kept)
+
+        lib, note = api.startup(self.settings)
+        api.opened(self.settings, lib, note)
+        self.assertEqual((cur / index).read_bytes(), b'address index')
+        self.recovered(work)
+
     def test_recovery_preserves_both_files_on_a_name_conflict(self):
         model = Path('models/model.gguf')
         cur, _, staged = self.interrupted_switch({model: b'staged model'})
@@ -2255,12 +2289,23 @@ class Switching(Base):
         existing.parent.mkdir()
         existing.write_bytes(b'previous model')
 
-        for _ in range(2):
-            lib, note = api.startup(self.settings)
-            self.assertEqual(lib, cur)
-            api.opened(self.settings, lib, note)
-            self.assertEqual((cur / model).read_bytes(), b'previous model')
-            self.assertEqual((staged / model).read_bytes(), b'staged model')
+        work = staged.parent.parent
+        lib, note = api.startup(self.settings)
+        self.assertEqual(lib, cur)
+        api.opened(self.settings, lib, note)
+        self.assertEqual((cur / model).read_bytes(), b'previous model')
+        self.assertFalse(api._pending_file(self.settings).exists())     # #354 review: the next start does not ask again
+        kept = [p for p in work.glob('kept-*/LastbookData') if (p / model).is_file()]
+        self.assertEqual(len(kept), 1, list(work.rglob('*')))
+        self.assertEqual((kept[0] / model).read_bytes(), b'staged model')
+        self.assertIn('same name', note['error'])
+        self.assertIn(str(kept[0]), note['error'])
+
+        lib, note = api.startup(self.settings)       # nothing is left to recover, and both copies stay
+        self.assertEqual(lib, None)
+        self.assertIsNone(note)
+        self.assertEqual((cur / model).read_bytes(), b'previous model')
+        self.assertEqual((kept[0] / model).read_bytes(), b'staged model')
 
     def test_new_library_that_does_not_open_is_rolled_back(self):
         cur = self.lib(self.parent / 'LastbookData', 'old')

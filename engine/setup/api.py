@@ -1049,11 +1049,11 @@ class Setup:
         """A switch refused at a restart and kept for the next (its pending file counts `attempts`) is dropped when a job would
         replace what it uses (a library or map download rewrites the unpack and the pending file), or when the person chooses
         another library (keep_for: the one chosen; its staged unpack goes too, as nothing will use it). A job adding only the
-        AI or addresses keeps it, and so does a switch staged as usual."""
+        AI or addresses keeps it, and so does a switch staged as usual. A rollback still putting files back is never dropped."""
         pend = _pending_file(self.settings_dir)
         try:
             d = json.loads(pend.read_text(encoding='utf-8'))
-            if 'attempts' in d and not (keep_for and install._real(d['target']) == install._real(keep_for)):
+            if 'attempts' in d and 'rollback' not in d and not (keep_for and install._real(d['target']) == install._real(keep_for)):
                 pend.unlink()
                 if keep_for:
                     shutil.rmtree(_work_for(Path(d['target'])) / 'unpack', ignore_errors=True)
@@ -1193,6 +1193,8 @@ class Setup:
             with self.lock:
                 if self.job and self.job['state'] in ACTIVE:
                     return {'error': 'A download is under way. Pause or cancel it first.', 'code': 'busy'}
+                if self._recovering():       # choosing another library would drop the stage that still holds files to put back
+                    return dict(RECOVERING)
                 self._drop_deferred_switch(keep_for=lib)
                 self.job = {'id': uuid.uuid4().hex[:12], 'state': 'done', 'error': None, 'started': _now(), 'folder': str(lib),
                             'items': [{'id': 'library', 'kind': 'pack', 'title': lib.name, 'state': 'done', 'bytes_done': 0, 'bytes_total': 0,
