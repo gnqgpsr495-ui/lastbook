@@ -159,6 +159,8 @@ def _same_disk(a, b):
 
 
 STOPPING = {'error': 'Lastbook is still stopping the previous download. Try again in a moment.', 'code': 'busy'}     # a cancelled worker outlived the join
+RECOVERING = {'error': 'Lastbook is still putting files back from the last update. Restart Lastbook to finish, then try again.',
+              'code': 'busy'}     # a rollback kept its stage and pending file for the next start (install._restore_library)
 FINISHING = 'Cancelled. Lastbook is finishing the cancellation: the files of this download are cleared when the step it is on ends.'
 
 
@@ -656,6 +658,8 @@ class Setup:
                 return {'error': 'A download is already under way. Pause or cancel it first.', 'code': 'busy'}
             if self._running():
                 return dict(STOPPING)
+            if self._recovering():
+                return dict(RECOVERING)
             pack = self.manifest.pack(pack_id) if pack_id else None
             if pack_id and (not pack or not pack['available']):
                 return {'error': 'That library is not available yet.', 'code': 'unavailable'}
@@ -778,6 +782,8 @@ class Setup:
                 return {'error': 'A download is already under way. Pause or cancel it first.', 'code': 'busy'}
             if self._running():
                 return dict(STOPPING)
+            if not check_only and self._recovering():
+                return dict(RECOVERING)
             cur = self.current_info()
             if self.mode != 'manage' or not cur:
                 return {'error': 'There is no library to check yet.' if check_only else 'There is no library to repair yet.', 'code': 'nothing'}
@@ -1030,6 +1036,14 @@ class Setup:
         self._run_id += 1
         self.thread = threading.Thread(target=self._work, args=(self.control, self._run_id), daemon=True, name='setup-job')
         self.thread.start()
+
+    def _recovering(self):
+        """A rollback that could not put every file back keeps its pending file (with 'rollback') and its stage, so the next
+        start can finish. A download rewrites both, so none starts until then."""
+        try:
+            return 'rollback' in json.loads(_pending_file(self.settings_dir).read_text(encoding='utf-8'))
+        except (OSError, ValueError, TypeError):
+            return False
 
     def _drop_deferred_switch(self, keep_for=None):
         """A switch refused at a restart and kept for the next (its pending file counts `attempts`) is dropped when a job would

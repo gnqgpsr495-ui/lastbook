@@ -2210,6 +2210,43 @@ class Switching(Base):
         self.assertEqual((cur / index).read_bytes(), b'address index')
         self.recovered(work)
 
+    def test_incomplete_rollback_is_kept_from_another_download(self):
+        """#354 review: after a rollback that could not move the address index back, starting another pack, a repair or a
+        cancel in Setup must not replace the kept stage before the next start recovers that index."""
+        model = 'models/model.gguf'
+        index = 'derived/geo/addresses/CA.sqlite'
+        cur, work, staged = self.interrupted_switch({model: b'model', index: b'address index'})
+        real = os.replace
+
+        def locked_index(src, dst):
+            if Path(src) == staged / index:
+                raise PermissionError('address index in use')
+            return real(src, dst)
+
+        with mock.patch.object(install.os, 'replace', locked_index):
+            lib, note = api.startup(self.settings)
+            api.opened(self.settings, lib, note)
+        pend = api._pending_file(self.settings)
+        kept = pend.read_bytes()
+
+        s = self.setup('manage', current=cur)
+        self.assertIsNone(s.cancel())        # no finished job is left to cancel
+        for start in (lambda: s.start('small'), lambda: s.start(repair=True)):
+            r = start()
+            if 'error' not in r:             # a download ran: let it finish, so the check below sees what it did
+                self.wait(s)
+            self.assertEqual(r.get('code'), 'busy', r)
+            self.assertIn('Restart Lastbook', r['error'])
+        self.assertEqual((staged / index).read_bytes(), b'address index')
+        self.assertEqual(pend.read_bytes(), kept)
+        self.assertEqual(self.files.log, [])
+
+        lib, note = api.startup(self.settings)      # the next start finishes the recovery
+        api.opened(self.settings, lib, note)
+        self.assertEqual((cur / index).read_bytes(), b'address index')
+        self.assertEqual((cur / model).read_bytes(), b'model')
+        self.recovered(work)
+
     def test_recovery_preserves_both_files_on_a_name_conflict(self):
         model = Path('models/model.gguf')
         cur, _, staged = self.interrupted_switch({model: b'staged model'})
